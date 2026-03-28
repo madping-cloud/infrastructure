@@ -195,16 +195,16 @@ Add SSH hosts, device names, and other setup-specific notes here.'
           "NPM_CONFIG_PREFIX=/var/lib/openclaw/.npm-global"
         ];
 
-        # Install openclaw if not present (with full PATH available)
-        ExecStartPre = pkgs.writeShellScript "openclaw-ensure-installed" ''
-          export PATH="${pkgs.nodejs_22}/bin:${pkgs.bash}/bin:${pkgs.coreutils}/bin:/run/current-system/sw/bin:$PATH"
-          export NPM_CONFIG_PREFIX=/var/lib/openclaw/.npm-global
+        # Verify openclaw binary exists before starting
+        ExecStartPre = pkgs.writeShellScript "openclaw-check" ''
           NPM_BIN="/var/lib/openclaw/.npm-global/bin/openclaw"
           if [ ! -f "$NPM_BIN" ]; then
-            echo "OpenClaw not found, installing..."
-            npm install -g openclaw
-            echo "OpenClaw installed."
+            echo "ERROR: OpenClaw not installed. Run as root:"
+            echo "  NPM_CONFIG_PREFIX=/var/lib/openclaw/.npm-global npm install -g openclaw"
+            echo "  chown -R openclaw:openclaw /var/lib/openclaw/.npm-global"
+            exit 1
           fi
+          echo "OpenClaw found at $NPM_BIN"
         '';
 
         ExecStart        = "${pkgs.nodejs_22}/bin/node ${config.services.openclaw.execPath} gateway start --foreground";
