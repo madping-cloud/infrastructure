@@ -189,14 +189,20 @@ Add SSH hosts, device names, and other setup-specific notes here.'
         Group            = "openclaw";
         WorkingDirectory = "/var/lib/openclaw";
 
-        # Auto-install OpenClaw if not present
+        # Full PATH so npm postinstall scripts (e.g. sharp) can find sh, cc, etc.
+        Environment = [
+          "PATH=${pkgs.nodejs_22}/bin:${pkgs.bash}/bin:${pkgs.coreutils}/bin:${pkgs.gnused}/bin:${pkgs.gnugrep}/bin:/run/current-system/sw/bin"
+          "NPM_CONFIG_PREFIX=/var/lib/openclaw/.npm-global"
+        ];
+
+        # Install openclaw if not present (with full PATH available)
         ExecStartPre = pkgs.writeShellScript "openclaw-ensure-installed" ''
-          set -e
+          export PATH="${pkgs.nodejs_22}/bin:${pkgs.bash}/bin:${pkgs.coreutils}/bin:/run/current-system/sw/bin:$PATH"
+          export NPM_CONFIG_PREFIX=/var/lib/openclaw/.npm-global
           NPM_BIN="/var/lib/openclaw/.npm-global/bin/openclaw"
           if [ ! -f "$NPM_BIN" ]; then
             echo "OpenClaw not found, installing..."
-            NPM_CONFIG_PREFIX=/var/lib/openclaw/.npm-global \
-              ${pkgs.nodejs_22}/bin/npm install -g openclaw
+            npm install -g openclaw
             echo "OpenClaw installed."
           fi
         '';
