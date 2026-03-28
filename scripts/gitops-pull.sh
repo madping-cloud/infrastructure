@@ -85,6 +85,14 @@ sync_config() {
       | incus exec "$container" -- tar -C "$dest/secrets/$HOSTNAME" -xf -
   fi
 
+  # Push age key (sops-nix needs this to decrypt secrets)
+  AGE_KEY="/root/.config/sops/age/keys.txt"
+  if [ -f "$AGE_KEY" ]; then
+    incus exec "$container" -- mkdir -p /var/lib/sops-nix
+    incus file push "$AGE_KEY" "$container/var/lib/sops-nix/key.txt"
+    incus exec "$container" -- chmod 600 /var/lib/sops-nix/key.txt
+  fi
+
   logger -t "$LOG_TAG" "Sync complete for $container"
 }
 
@@ -103,6 +111,13 @@ for CONTAINER in $CONTAINERS; do
 
   # Sync nix config into container
   sync_config "$CONTAINER"
+
+  # Bootstrap prep: idempotent, no-op on already-deployed containers
+  incus exec "$CONTAINER" -- bash -c '
+    grep -q "sandbox = true" /etc/nix/nix.conf 2>/dev/null && \
+      sed -i "s/sandbox = true/sandbox = false/" /etc/nix/nix.conf || true
+    rm -f /etc/nixos/configuration.nix /etc/nixos/incus.nix
+  ' 2>/dev/null || true
 
   if incus exec "$CONTAINER" -- nixos-rebuild switch --flake "/etc/nixos#$CONTAINER" 2>&1 | logger -t "$LOG_TAG"; then
     logger -t "$LOG_TAG" "✓ $CONTAINER deployed successfully"

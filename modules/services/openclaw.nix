@@ -70,9 +70,6 @@ ENVEOF
       chown openclaw:openclaw "$ENV_FILE"
     ''; deps = []; };
 
-    # ── Patch auth-profiles.json with API keys from sops ──────────────────────
-    # openclaw stores API keys in auth-profiles.json, not env vars.
-    # This script reads sops-decrypted keys and writes them into the file.
     system.activationScripts.openclawAuthPatch = { text = let jq = "${pkgs.jq}/bin/jq"; in ''
       AUTH_DIR="/var/lib/openclaw/.openclaw/agents/main/agent"
       AUTH_FILE="$AUTH_DIR/auth-profiles.json"
@@ -86,10 +83,8 @@ ENVEOF
       GROQ=$(pick "$(cat /run/secrets/groq_api_key 2>/dev/null || echo "")" "$(cat /run/secrets/shared_groq_api_key 2>/dev/null || echo "")")
       OPENROUTER=$(pick "$(cat /run/secrets/openrouter_api_key 2>/dev/null || echo "")" "$(cat /run/secrets/shared_openrouter_api_key 2>/dev/null || echo "")")
 
-      # No keys at all? Skip.
       [ -z "$ANTHROPIC" ] && [ -z "$OPENAI" ] && [ -z "$GOOGLE" ] && [ -z "$GROQ" ] && [ -z "$OPENROUTER" ] && exit 0
 
-      # Start from existing file or empty template
       if [ -f "$AUTH_FILE" ]; then
         TEMP=$(mktemp)
         cp "$AUTH_FILE" "$TEMP"
@@ -98,7 +93,6 @@ ENVEOF
         echo '{"version":1,"profiles":{},"lastGood":{}}' > "$TEMP"
       fi
 
-      # Patch each provider key if non-empty
       if [ -n "$ANTHROPIC" ]; then
         ${jq} --arg token "$ANTHROPIC" '.profiles["anthropic:default"] = {"type":"token","provider":"anthropic","token":$token} | .lastGood.anthropic = "anthropic:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
       fi
@@ -198,10 +192,15 @@ Add SSH hosts, device names, and other setup-specific notes here."
       serviceConfig = {
         Type = "simple"; User = "openclaw"; Group = "openclaw"; WorkingDirectory = "/var/lib/openclaw";
         Environment = [ "PATH=${pkgs.nodejs_22}/bin:${pkgs.bash}/bin:${pkgs.coreutils}/bin:${pkgs.gnused}/bin:${pkgs.gnugrep}/bin:/run/current-system/sw/bin" "NPM_CONFIG_PREFIX=/var/lib/openclaw/.npm-global" ];
-        ExecStartPre = pkgs.writeShellScript "openclaw-check" ''
+        ExecStartPre = pkgs.writeShellScript "openclaw-prestart" ''
           NPM_BIN="/var/lib/openclaw/.npm-global/bin/openclaw"
-          if [ ! -f "$NPM_BIN" ]; then echo "ERROR: OpenClaw not installed"; exit 1; fi
-          echo "OpenClaw found at $NPM_BIN"
+          if [ ! -f "$NPM_BIN" ]; then
+            echo "OpenClaw not found — installing via npm..."
+            npm install -g openclaw
+            echo "OpenClaw installed successfully"
+          else
+            echo "OpenClaw found at $NPM_BIN"
+          fi
         '';
         ExecStart = "${pkgs.nodejs_22}/bin/node ${config.services.openclaw.execPath} gateway";
         Restart = "on-failure"; RestartSec = "30s"; StandardOutput = "journal"; StandardError = "journal"; SyslogIdentifier = "openclaw-gateway";

@@ -56,6 +56,35 @@ deploy_container() {
     flake.nix flake.lock hosts modules lib .sops.yaml 2>/dev/null \
     | incus exec "$CONTAINER" -- tar -C /etc/nixos -xf -
 
+  # Push age key (needed for sops-nix to decrypt secrets at activation time)
+  AGE_KEY="/root/.config/sops/age/keys.txt"
+  if [ -f "$AGE_KEY" ]; then
+    echo "==> Pushing age key..."
+    incus exec "$CONTAINER" -- mkdir -p /var/lib/sops-nix
+    incus file push "$AGE_KEY" "$CONTAINER/var/lib/sops-nix/key.txt"
+    incus exec "$CONTAINER" -- chmod 600 /var/lib/sops-nix/key.txt
+  fi
+
+  # Push secrets (sops-encrypted; decrypted at activation time by sops-nix)
+  if [ -d "$WORKSPACE/secrets/$HOSTNAME" ]; then
+    echo "==> Pushing secrets..."
+    incus exec "$CONTAINER" -- mkdir -p "/etc/nixos/secrets/$HOSTNAME"
+    tar -C "$WORKSPACE/secrets/$HOSTNAME" -cf - . \
+      | incus exec "$CONTAINER" -- tar -C "/etc/nixos/secrets/$HOSTNAME" -xf -
+  fi
+
+  # Bootstrap prep: disable nix sandbox (LXC cannot use kernel namespaces)
+  # and remove default NixOS configs that conflict with flake-based deploys.
+  # Idempotent — safe to run on already-deployed containers.
+  echo "==> Prepping container..."
+  incus exec "$CONTAINER" -- bash -c '
+    if grep -q "sandbox = true" /etc/nix/nix.conf 2>/dev/null; then
+      sed -i "s/sandbox = true/sandbox = false/" /etc/nix/nix.conf
+      echo "  Nix sandbox disabled (LXC incompatible)"
+    fi
+    rm -f /etc/nixos/configuration.nix /etc/nixos/incus.nix
+  '
+
   # Build or switch
   if [[ -n "$BUILD_ONLY" ]]; then
     echo "==> Building (dry run — not switching)..."

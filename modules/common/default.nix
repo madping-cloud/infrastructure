@@ -81,6 +81,7 @@
     settings = {
       experimental-features = [ "nix-command" "flakes" ];
       trusted-users = [ "root" ];
+      sandbox = false;  # LXC containers cannot use kernel namespaces
     };
     gc = {
       automatic = true;
