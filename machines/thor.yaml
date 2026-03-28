@@ -1,0 +1,12 @@
+# machines/thor.yaml — Thor host configuration
+# Lists the Incus containers Thor manages and their flake targets.
+
+hostname: thor
+ip: 10.100.0.1
+containers:
+  - name: silas
+    flake_target: silas
+  - name: aurora
+    flake_target: aurora
+  - name: atlas
+    flake_target: atlas

@@ -1,0 +1,13 @@
+[Unit]
+Description=GitOps pull and deploy
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/infrastructure/scripts/gitops-pull.sh
+TimeoutStartSec=600
+Environment=PATH=/usr/local/bin:/usr/bin:/bin:/nix/var/nix/profiles/default/bin
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=gitops-pull

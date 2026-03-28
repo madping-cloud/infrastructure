@@ -1,0 +1,10 @@
+# machines/loki.yaml — Loki host configuration
+# Lists the Incus containers Loki manages and their flake targets.
+# Update IP and containers when Loki is provisioned.
+
+hostname: loki
+ip: TBD
+containers: []
+# Add containers here when Loki is provisioned. Example:
+#   - name: agent-name
+#     flake_target: agent-name
