@@ -7,6 +7,7 @@
     sops-nix = {
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
+
     };
   };
 
@@ -42,7 +43,7 @@
         hostModule = ./hosts/aurora/default.nix;
       };
 
-    };
+};
 
     # ── Dev Shell ─────────────────────────────────────────────────────────────
     devShells.${system}.default = pkgs.mkShell {
