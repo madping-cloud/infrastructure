@@ -43,7 +43,7 @@
         hostModule = ./hosts/aurora/default.nix;
       };
 
-};
+    };
 
     # ── Dev Shell ─────────────────────────────────────────────────────────────
     devShells.${system}.default = pkgs.mkShell {
