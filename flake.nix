@@ -16,23 +16,17 @@
     pkgs   = nixpkgs.legacyPackages.${system};
     lib    = nixpkgs.lib;
 
-    # Helper: build a NixOS container config
-    mkAgent = { name, hostModule }: nixpkgs.lib.nixosSystem {
-      inherit system;
-      specialArgs = { inherit inputs name; };
-      modules = [
-        sops-nix.nixosModules.sops
-        ./modules/common/default.nix
-        ./modules/services/openclaw.nix
-        hostModule
-      ];
-    };
+    # Load shared helpers from lib/
+    localLib = import ./lib { inherit nixpkgs sops-nix system; };
+
+    # Helper alias for readability
+    mkAgent = localLib.mkAgent;
 
   in {
 
     # ── Agent Containers ──────────────────────────────────────────────────────
     # Each agent is a NixOS Incus container with OpenClaw installed.
-    # Add a new agent: copy hosts/_template/, set name, add entry here.
+    # Add a new agent: copy hosts/_template/, set hostname, add entry here.
 
     nixosConfigurations = {
 

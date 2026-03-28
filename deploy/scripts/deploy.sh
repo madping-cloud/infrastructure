@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 # deploy/scripts/deploy.sh — Deploy a NixOS config to an Incus container
 #
+# ┌─────────────────────────────────────────────────────────────────────────┐
+# │  RUN THIS FROM: Anywhere with SSH access to the target container        │
+# │  METHOD: Uses `nixos-rebuild --target-host` over SSH                   │
+# │                                                                         │
+# │  Use this script when you are NOT on Thor and want to deploy remotely   │
+# │  to a container via SSH. Requires nixos-rebuild in your local PATH.     │
+# │                                                                         │
+# │  For local deploys (from Thor via incus exec), use: scripts/deploy.sh  │
+# └─────────────────────────────────────────────────────────────────────────┘
+#
 # Usage:
 #   ./deploy/scripts/deploy.sh <hostname> [--build-only] [--dry-run]
 #

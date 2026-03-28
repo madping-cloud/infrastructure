@@ -21,6 +21,17 @@
       default = "/root/.openclaw/workspace";
     };
 
+    execPath = lib.mkOption {
+      type        = lib.types.str;
+      default     = "/root/.npm-global/lib/node_modules/openclaw/openclaw.mjs";
+      description = ''
+        Path to the OpenClaw main script (openclaw.mjs).
+        Defaults to the npm global install path (/root/.npm-global/...).
+        Override if OpenClaw is installed elsewhere.
+        The script is invoked with pkgs.nodejs_22.
+      '';
+    };
+
     secretsFile = lib.mkOption {
       type    = lib.types.nullOr lib.types.str;
       default = null;
@@ -174,7 +185,7 @@ TOOLS
 
       serviceConfig = {
         Type             = "simple";
-        ExecStart        = "${pkgs.nodejs_22}/bin/node /root/.nvm/versions/node/current/lib/node_modules/openclaw/openclaw.mjs gateway start --foreground";
+        ExecStart        = "${pkgs.nodejs_22}/bin/node ${config.services.openclaw.execPath} gateway start --foreground";
         Restart          = "on-failure";
         RestartSec       = "30s";
         WorkingDirectory = "/root";
