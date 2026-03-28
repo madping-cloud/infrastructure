@@ -65,9 +65,11 @@
   };
 
   # ── Audit ─────────────────────────────────────────────────────────────────────
-  security.auditd.enable = lib.mkDefault true;
-  security.audit.enable = lib.mkDefault true;
-  security.audit.rules = [
+  # Audit: disabled in containers (LXC doesn't support it), enabled on bare metal
+  # Use mkDefault so host-level configs can override either way
+  security.auditd.enable = lib.mkDefault false;
+  security.audit.enable  = lib.mkDefault false;
+  security.audit.rules   = lib.mkDefault [
     "-a exit,always -F arch=b64 -S execve"
   ];
 
