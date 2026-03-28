@@ -8,3 +8,5 @@ containers:
     flake_target: cole
   - name: aurora
     flake_target: aurora
+  - name: atlas
+    flake_target: atlas
