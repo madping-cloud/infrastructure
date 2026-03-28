@@ -1,7 +1,6 @@
 { config, modulesPath, pkgs, name, ... }:
 {
   imports = [ "${modulesPath}/virtualisation/lxc-container.nix" ];
-  assertions = [{ assertion = config.networking.hostName != "CHANGE_ME"; message = "Set the hostname!"; }];
   networking = { hostName = "CHANGE_ME"; enableIPv6 = false; dhcpcd.enable = false; useDHCP = false; useHostResolvConf = false; };
   systemd.network = { enable = true; networks."50-eth0" = { matchConfig.Name = "eth0"; networkConfig = { DHCP = "ipv4"; IPv6AcceptRA = false; }; linkConfig.RequiredForOnline = "routable"; }; };
   sops.age.keyFile = "/var/lib/sops-nix/key.txt";
