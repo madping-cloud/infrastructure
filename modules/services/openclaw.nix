@@ -89,6 +89,22 @@
       "d ${config.services.openclaw.workDir}/memory     0750 openclaw openclaw -"
     ];
 
+    # ── Shell profile for interactive `su - openclaw` sessions ────────────────
+    system.activationScripts.openclawProfile = {
+      text = ''
+        for PROFILE in /var/lib/openclaw/.profile /var/lib/openclaw/.bashrc; do
+          if [ ! -f "$PROFILE" ]; then
+            cat > "$PROFILE" <<'SHELLRC'
+export NPM_CONFIG_PREFIX="$HOME/.npm-global"
+export PATH="$HOME/.npm-global/bin:$PATH"
+SHELLRC
+            chown openclaw:openclaw "$PROFILE"
+          fi
+        done
+      '';
+      deps = [];
+    };
+
     # ── Personality files (deployed once, never overwritten) ──────────────────
     system.activationScripts.openclawPersonality =
       lib.mkIf config.services.openclaw.deployPersonalityFiles {
