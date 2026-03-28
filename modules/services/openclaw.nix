@@ -223,7 +223,7 @@ Add SSH hosts, device names, and other setup-specific notes here.'
           echo "OpenClaw found at $NPM_BIN"
         '';
 
-        ExecStart        = "${pkgs.nodejs_22}/bin/node ${config.services.openclaw.execPath} gateway start";
+        ExecStart        = "${pkgs.nodejs_22}/bin/node ${config.services.openclaw.execPath} gateway";
         Restart          = "on-failure";
         RestartSec       = "30s";
         StandardOutput   = "journal";
