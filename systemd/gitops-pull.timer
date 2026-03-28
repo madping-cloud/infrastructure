@@ -3,7 +3,7 @@ Description=GitOps pull timer — check for infrastructure changes every 5 minut
 
 [Timer]
 OnBootSec=2min
-OnUnitActiveSec=5min
+OnUnitActiveSec=1min
 RandomizedDelaySec=30s
 Persistent=true
 
