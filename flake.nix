@@ -42,12 +42,6 @@
         hostModule = ./hosts/aurora/default.nix;
       };
 
-      # Atlas — Marc's primary assistant (currently bare Thor, future: container)
-      atlas = mkAgent {
-        name       = "atlas";
-        hostModule = ./hosts/atlas/default.nix;
-      };
-
     };
 
     # ── Dev Shell ─────────────────────────────────────────────────────────────
@@ -55,10 +49,9 @@
       name = "infra-dev";
       packages = with pkgs; [ git sops age jq nixos-rebuild ];
       shellHook = ''
-        echo "🔧 madping-cloud infrastructure"
+        echo "madping-cloud infrastructure"
         echo "   nixos-rebuild switch --flake .#cole    — rebuild cole"
         echo "   nixos-rebuild switch --flake .#aurora  — rebuild aurora"
-        echo "   nixos-rebuild switch --flake .#atlas   — rebuild atlas"
       '';
     };
 
