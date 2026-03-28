@@ -188,7 +188,20 @@ Add SSH hosts, device names, and other setup-specific notes here.'
         User             = "openclaw";
         Group            = "openclaw";
         WorkingDirectory = "/var/lib/openclaw";
-        ExecStart        = "${pkgs.nodejs_22}/bin/node ${config.services.openclaw.execPath}  gateway start --foreground";
+
+        # Auto-install OpenClaw if not present
+        ExecStartPre = pkgs.writeShellScript "openclaw-ensure-installed" ''
+          set -e
+          NPM_BIN="/var/lib/openclaw/.npm-global/bin/openclaw"
+          if [ ! -f "$NPM_BIN" ]; then
+            echo "OpenClaw not found, installing..."
+            NPM_CONFIG_PREFIX=/var/lib/openclaw/.npm-global \
+              ${pkgs.nodejs_22}/bin/npm install -g openclaw
+            echo "OpenClaw installed."
+          fi
+        '';
+
+        ExecStart        = "${pkgs.nodejs_22}/bin/node ${config.services.openclaw.execPath} gateway start --foreground";
         Restart          = "on-failure";
         RestartSec       = "30s";
         StandardOutput   = "journal";
