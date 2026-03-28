@@ -100,6 +100,8 @@ for CONTAINER in $CONTAINERS; do
   ' 2>/dev/null || true
 
   if incus exec "$CONTAINER" -- nixos-rebuild switch --flake "/etc/nixos#$CONTAINER" 2>&1 | logger -t "$LOG_TAG"; then
+    # Safety: ensure /run/current-system points to the correct store path
+    incus exec "$CONTAINER" -- bash -c 'ln -sfn $(readlink -f /nix/var/nix/profiles/system) /run/current-system' 2>/dev/null || true
     logger -t "$LOG_TAG" "✓ $CONTAINER deployed successfully"
   else
     logger -t "$LOG_TAG" "✗ $CONTAINER deploy FAILED"

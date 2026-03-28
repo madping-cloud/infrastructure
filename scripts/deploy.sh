@@ -67,8 +67,8 @@ deploy_container() {
     echo "==> Applying configuration..."
     incus exec "$CONTAINER" -- nixos-rebuild switch --flake "/etc/nixos#$CONTAINER"
 
-    # Fix /run/current-system — switch-to-configuration doesn't update it on first LXC rebuild
-    incus exec "$CONTAINER" -- bash -c 'ln -sfn $(readlink /nix/var/nix/profiles/system) /run/current-system'
+    # Safety: ensure /run/current-system points to the correct store path
+    incus exec "$CONTAINER" -- bash -c 'ln -sfn $(readlink -f /nix/var/nix/profiles/system) /run/current-system'
 
     echo "==> Deploy complete: $CONTAINER"
     incus exec "$CONTAINER" -- nixos-version

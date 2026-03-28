@@ -40,7 +40,7 @@ SHELLRC
       if [ ! -f "$CONFIG" ]; then
         mkdir -p /var/lib/openclaw/.openclaw
         cat > "$CONFIG" << 'CONFIGJSON'
-{"meta":{},"auth":{"profiles":{"anthropic:default":{"provider":"anthropic","mode":"env"}},"order":{"anthropic":["anthropic:default"]}},"agents":{"defaults":{"model":{"primary":"anthropic/claude-sonnet-4-6","fallbacks":["anthropic/claude-opus-4-6","anthropic/claude-haiku-4-5"]},"models":{"anthropic/claude-opus-4-6":{},"anthropic/claude-sonnet-4-6":{},"anthropic/claude-haiku-4-5":{}},"workspace":"/var/lib/openclaw/workspace","compaction":{"mode":"safeguard"},"maxConcurrent":4,"subagents":{"maxConcurrent":8}}},"tools":{"web":{"search":{"enabled":true,"provider":"duckduckgo"},"fetch":{"enabled":true}}},"messages":{"ackReactionScope":"group-mentions"},"commands":{"native":"auto","nativeSkills":"auto","restart":true},"gateway":{"port":18789,"mode":"local","bind":"loopback","auth":{"mode":"token"}},"plugins":{"entries":{"duckduckgo":{"enabled":true}}}}
+{"meta":{},"auth":{"profiles":{"anthropic:default":{"provider":"anthropic","mode":"api_key"}},"order":{"anthropic":["anthropic:default"]}},"agents":{"defaults":{"model":{"primary":"anthropic/claude-sonnet-4-6","fallbacks":["anthropic/claude-opus-4-6","anthropic/claude-haiku-4-5"]},"models":{"anthropic/claude-opus-4-6":{},"anthropic/claude-sonnet-4-6":{},"anthropic/claude-haiku-4-5":{}},"workspace":"/var/lib/openclaw/workspace","compaction":{"mode":"safeguard"},"maxConcurrent":4,"subagents":{"maxConcurrent":8}}},"tools":{"web":{"search":{"enabled":true,"provider":"duckduckgo"},"fetch":{"enabled":true}}},"messages":{"ackReactionScope":"group-mentions"},"commands":{"native":"auto","nativeSkills":"auto","restart":true},"gateway":{"port":18789,"mode":"local","bind":"loopback","auth":{"mode":"token"}},"plugins":{"entries":{"duckduckgo":{"enabled":true}}}}
 CONFIGJSON
         chown openclaw:openclaw "$CONFIG"
       fi
@@ -83,63 +83,64 @@ ENVEOF
       GROQ=$(pick "$(cat /run/secrets/groq_api_key 2>/dev/null || echo "")" "$(cat /run/secrets/shared_groq_api_key 2>/dev/null || echo "")")
       OPENROUTER=$(pick "$(cat /run/secrets/openrouter_api_key 2>/dev/null || echo "")" "$(cat /run/secrets/shared_openrouter_api_key 2>/dev/null || echo "")")
 
-      [ -z "$ANTHROPIC" ] && [ -z "$OPENAI" ] && [ -z "$GOOGLE" ] && [ -z "$GROQ" ] && [ -z "$OPENROUTER" ] && exit 0
+      if ! ( [ -z "$ANTHROPIC" ] && [ -z "$OPENAI" ] && [ -z "$GOOGLE" ] && [ -z "$GROQ" ] && [ -z "$OPENROUTER" ] ); then
+        if [ -f "$AUTH_FILE" ]; then
+          TEMP=$(mktemp)
+          cp "$AUTH_FILE" "$TEMP"
+        else
+          TEMP=$(mktemp)
+          echo '{"version":1,"profiles":{},"lastGood":{}}' > "$TEMP"
+        fi
 
-      if [ -f "$AUTH_FILE" ]; then
-        TEMP=$(mktemp)
-        cp "$AUTH_FILE" "$TEMP"
-      else
-        TEMP=$(mktemp)
-        echo '{"version":1,"profiles":{},"lastGood":{}}' > "$TEMP"
-      fi
+        if [ -n "$ANTHROPIC" ]; then
+          ${jq} --arg token "$ANTHROPIC" '.profiles["anthropic:default"] = {"type":"token","provider":"anthropic","token":$token} | .lastGood.anthropic = "anthropic:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
+        fi
+        if [ -n "$OPENAI" ]; then
+          ${jq} --arg token "$OPENAI" '.profiles["openai:default"] = {"type":"token","provider":"openai","token":$token} | .lastGood.openai = "openai:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
+        fi
+        if [ -n "$GOOGLE" ]; then
+          ${jq} --arg token "$GOOGLE" '.profiles["google:default"] = {"type":"token","provider":"google","token":$token} | .lastGood.google = "google:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
+        fi
+        if [ -n "$GROQ" ]; then
+          ${jq} --arg token "$GROQ" '.profiles["groq:default"] = {"type":"token","provider":"groq","token":$token} | .lastGood.groq = "groq:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
+        fi
+        if [ -n "$OPENROUTER" ]; then
+          ${jq} --arg token "$OPENROUTER" '.profiles["openrouter:default"] = {"type":"token","provider":"openrouter","token":$token} | .lastGood.openrouter = "openrouter:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
+        fi
 
-      if [ -n "$ANTHROPIC" ]; then
-        ${jq} --arg token "$ANTHROPIC" '.profiles["anthropic:default"] = {"type":"token","provider":"anthropic","token":$token} | .lastGood.anthropic = "anthropic:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
-      fi
-      if [ -n "$OPENAI" ]; then
-        ${jq} --arg token "$OPENAI" '.profiles["openai:default"] = {"type":"token","provider":"openai","token":$token} | .lastGood.openai = "openai:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
-      fi
-      if [ -n "$GOOGLE" ]; then
-        ${jq} --arg token "$GOOGLE" '.profiles["google:default"] = {"type":"token","provider":"google","token":$token} | .lastGood.google = "google:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
-      fi
-      if [ -n "$GROQ" ]; then
-        ${jq} --arg token "$GROQ" '.profiles["groq:default"] = {"type":"token","provider":"groq","token":$token} | .lastGood.groq = "groq:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
-      fi
-      if [ -n "$OPENROUTER" ]; then
-        ${jq} --arg token "$OPENROUTER" '.profiles["openrouter:default"] = {"type":"token","provider":"openrouter","token":$token} | .lastGood.openrouter = "openrouter:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
-      fi
-
-      if [ -s "$TEMP" ] && ${jq} empty "$TEMP" 2>/dev/null; then
-        mv "$TEMP" "$AUTH_FILE"
-        chown openclaw:openclaw "$AUTH_FILE"
-        chmod 600 "$AUTH_FILE"
-      else
-        rm -f "$TEMP" "$TEMP.new"
+        if [ -s "$TEMP" ] && ${jq} empty "$TEMP" 2>/dev/null; then
+          mv "$TEMP" "$AUTH_FILE"
+          chown openclaw:openclaw "$AUTH_FILE"
+          chmod 600 "$AUTH_FILE"
+        else
+          rm -f "$TEMP" "$TEMP.new"
+        fi
       fi
     ''; deps = [ "openclawConfig" ]; };
 
     system.activationScripts.openclawChannelPatch = { text = let jq = "${pkgs.jq}/bin/jq"; in ''
       CONFIG="/var/lib/openclaw/.openclaw/openclaw.json"
-      [ -f "$CONFIG" ] || exit 0
-      DISCORD=$(cat /run/secrets/discord_token 2>/dev/null || echo "")
-      TELEGRAM=$(cat /run/secrets/telegram_token 2>/dev/null || echo "")
-      GATEWAY=$(cat /run/secrets/gateway_token 2>/dev/null || echo "")
-      TEMP=$(mktemp)
-      cp "$CONFIG" "$TEMP"
-      if [ -n "$DISCORD" ]; then
-        ${jq} --arg token "$DISCORD" '.channels.discord = (.channels.discord // {}) | .channels.discord.enabled = true | .channels.discord.token = $token | .channels.discord.groupPolicy = (.channels.discord.groupPolicy // "open") | .channels.discord.streaming = (.channels.discord.streaming // "off")' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
-      fi
-      if [ -n "$TELEGRAM" ]; then
-        ${jq} --arg token "$TELEGRAM" '.channels.telegram = (.channels.telegram // {}) | .channels.telegram.enabled = true | .channels.telegram.botToken = $token | .channels.telegram.dmPolicy = (.channels.telegram.dmPolicy // "allowlist") | .channels.telegram.groupPolicy = (.channels.telegram.groupPolicy // "allowlist") | .channels.telegram.streaming = (.channels.telegram.streaming // "partial")' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
-      fi
-      if [ -n "$GATEWAY" ]; then
-        ${jq} --arg token "$GATEWAY" '.gateway.auth.token = $token' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
-      fi
-      if [ -s "$TEMP" ] && ${jq} empty "$TEMP" 2>/dev/null; then
-        mv "$TEMP" "$CONFIG"
-        chown openclaw:openclaw "$CONFIG"
-      else
-        rm -f "$TEMP" "$TEMP.new"
+      if [ -f "$CONFIG" ]; then
+        DISCORD=$(cat /run/secrets/discord_token 2>/dev/null || echo "")
+        TELEGRAM=$(cat /run/secrets/telegram_token 2>/dev/null || echo "")
+        GATEWAY=$(cat /run/secrets/gateway_token 2>/dev/null || echo "")
+        TEMP=$(mktemp)
+        cp "$CONFIG" "$TEMP"
+        if [ -n "$DISCORD" ]; then
+          ${jq} --arg token "$DISCORD" '.channels.discord = (.channels.discord // {}) | .channels.discord.enabled = true | .channels.discord.token = $token | .channels.discord.groupPolicy = (.channels.discord.groupPolicy // "open") | .channels.discord.streaming = (.channels.discord.streaming // "off")' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
+        fi
+        if [ -n "$TELEGRAM" ]; then
+          ${jq} --arg token "$TELEGRAM" '.channels.telegram = (.channels.telegram // {}) | .channels.telegram.enabled = true | .channels.telegram.botToken = $token | .channels.telegram.dmPolicy = (.channels.telegram.dmPolicy // "allowlist") | .channels.telegram.groupPolicy = (.channels.telegram.groupPolicy // "allowlist") | .channels.telegram.streaming = (.channels.telegram.streaming // "partial")' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
+        fi
+        if [ -n "$GATEWAY" ]; then
+          ${jq} --arg token "$GATEWAY" '.gateway.auth.token = $token' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
+        fi
+        if [ -s "$TEMP" ] && ${jq} empty "$TEMP" 2>/dev/null; then
+          mv "$TEMP" "$CONFIG"
+          chown openclaw:openclaw "$CONFIG"
+        else
+          rm -f "$TEMP" "$TEMP.new"
+        fi
       fi
     ''; deps = [ "openclawConfig" ]; };
 
