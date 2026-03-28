@@ -39,9 +39,22 @@ deploy_container() {
   local CONTAINER="$1"
   echo "==> Deploying to container: $CONTAINER"
 
-  # Sync flake files to container
+  # Sync only nix-needed files to container (matching gitops-pull.sh pattern)
   echo "==> Syncing configuration..."
-  incus file push -r "$WORKSPACE/." "$CONTAINER/etc/nixos/" --create-dirs
+  incus exec "$CONTAINER" -- mkdir -p /etc/nixos
+
+  tar -C "$WORKSPACE" \
+    --exclude='.git' \
+    --exclude='secrets' \
+    --exclude='scripts' \
+    --exclude='systemd' \
+    --exclude='docs' \
+    --exclude='machines' \
+    --exclude='deploy' \
+    --exclude='*.sh' \
+    -cf - \
+    flake.nix flake.lock hosts modules lib .sops.yaml 2>/dev/null \
+    | incus exec "$CONTAINER" -- tar -C /etc/nixos -xf -
 
   # Build or switch
   if [[ -n "$BUILD_ONLY" ]]; then

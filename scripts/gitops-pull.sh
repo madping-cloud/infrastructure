@@ -90,29 +90,35 @@ sync_config() {
 
 # Deploy each container
 FAILURES=0
+SKIPPED=0
 for CONTAINER in $CONTAINERS; do
   logger -t "$LOG_TAG" "Deploying $CONTAINER..."
 
-  # Check container is running
-  if incus exec "$CONTAINER" -- true 2>/dev/null; then
-    # Sync nix config into container
-    sync_config "$CONTAINER"
+  # Check container exists and is running
+  if ! incus exec "$CONTAINER" -- true 2>/dev/null; then
+    logger -t "$LOG_TAG" "⊘ $CONTAINER is not running, skipping"
+    ((SKIPPED++))
+    continue
+  fi
 
-    if incus exec "$CONTAINER" -- nixos-rebuild switch --flake "/etc/nixos#$CONTAINER" 2>&1 | logger -t "$LOG_TAG"; then
-      logger -t "$LOG_TAG" "✓ $CONTAINER deployed successfully"
-    else
-      logger -t "$LOG_TAG" "✗ $CONTAINER deploy FAILED"
-      ((FAILURES++))
-    fi
+  # Sync nix config into container
+  sync_config "$CONTAINER"
+
+  if incus exec "$CONTAINER" -- nixos-rebuild switch --flake "/etc/nixos#$CONTAINER" 2>&1 | logger -t "$LOG_TAG"; then
+    logger -t "$LOG_TAG" "✓ $CONTAINER deployed successfully"
   else
-    logger -t "$LOG_TAG" "✗ $CONTAINER is not running, skipping"
+    logger -t "$LOG_TAG" "✗ $CONTAINER deploy FAILED"
     ((FAILURES++))
   fi
 done
 
 if [ "$FAILURES" -gt 0 ]; then
-  logger -t "$LOG_TAG" "Completed with $FAILURES failure(s)"
+  logger -t "$LOG_TAG" "Completed with $FAILURES failure(s), $SKIPPED skipped"
   exit 1
 fi
 
-logger -t "$LOG_TAG" "All containers deployed successfully (${NEW_COMMIT:0:8})"
+if [ "$SKIPPED" -gt 0 ]; then
+  logger -t "$LOG_TAG" "All reachable containers deployed (${NEW_COMMIT:0:8}), $SKIPPED not running"
+else
+  logger -t "$LOG_TAG" "All containers deployed successfully (${NEW_COMMIT:0:8})"
+fi

@@ -1,5 +1,5 @@
 [Unit]
-Description=GitOps pull timer — check for infrastructure changes every 5 minutes
+Description=GitOps pull timer — check for infrastructure changes every 1 minute
 
 [Timer]
 OnBootSec=2min
