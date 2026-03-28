@@ -6,7 +6,7 @@
   ];
 
   networking = {
-    hostName   = "silas";
+    hostName   = "cole";
     enableIPv6 = false;
     dhcpcd.enable = false;
     useDHCP       = false;

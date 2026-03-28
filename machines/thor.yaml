@@ -4,8 +4,8 @@
 hostname: thor
 ip: 10.100.0.1
 containers:
-  - name: silas
-    flake_target: silas
+  - name: cole
+    flake_target: cole
   - name: aurora
     flake_target: aurora
   - name: atlas
