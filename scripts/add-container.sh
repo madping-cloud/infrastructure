@@ -1,19 +1,5 @@
 #!/usr/bin/env bash
 # scripts/add-container.sh — Create and deploy a new agent container
-#
-# Automates the full workflow:
-#   1. Copy hosts/_template/ to hosts/<name>/
-#   2. Set hostname in the NixOS config
-#   3. Add nixosConfigurations entry to flake.nix
-#   4. Add container to machines/<host>.yaml
-#   4.5 Create encrypted secrets template
-#   5. Launch the Incus container
-#   6. Deploy NixOS config into it
-#
-# Usage:
-#   ./scripts/add-container.sh <name> [--no-deploy]
-#
-# Run from the Debian host (Thor, Loki, etc.)
 
 set -euo pipefail
 
@@ -21,7 +7,6 @@ REPO_DIR="/opt/infrastructure"
 HOSTNAME=$(hostname)
 MACHINE_FILE="$REPO_DIR/machines/${HOSTNAME}.yaml"
 
-# Parse args
 CONTAINER_NAME=""
 NO_DEPLOY=""
 for arg in "$@"; do
@@ -34,15 +19,9 @@ done
 
 if [ -z "$CONTAINER_NAME" ]; then
   echo "Usage: $0 <container-name> [--no-deploy]"
-  echo ""
-  echo "Creates a new NixOS agent container on this host ($HOSTNAME)."
-  echo ""
-  echo "Options:"
-  echo "  --no-deploy   Set up config files only, don't launch or deploy"
   exit 1
 fi
 
-# Validate name (lowercase, alphanumeric + hyphens)
 if ! echo "$CONTAINER_NAME" | grep -qP '^[a-z][a-z0-9-]*$'; then
   echo "ERROR: Container name must be lowercase, start with a letter, and contain only a-z, 0-9, hyphens"
   exit 1
@@ -70,34 +49,33 @@ sed -i "s/CHANGE_ME/$CONTAINER_NAME/g" "hosts/$CONTAINER_NAME/default.nix"
 
 # ── Step 3: Add nixosConfigurations entry to flake.nix ───────────────────────
 echo "==> Adding $CONTAINER_NAME to flake.nix..."
-
-INSERT_LINE=$(grep -n '^\s*};' flake.nix | head -1 | cut -d: -f1)
-
-if [ -z "$INSERT_LINE" ]; then
-  echo "ERROR: Could not find insertion point in flake.nix"
-  exit 1
-fi
-
-ENTRY=$(cat <<EOF
-
-      # $CONTAINER_NAME
-      $CONTAINER_NAME = mkAgent {
-        name       = "$CONTAINER_NAME";
-        hostModule = ./hosts/$CONTAINER_NAME/default.nix;
-      };
-EOF
+python3 - "$CONTAINER_NAME" << 'PYEOF'
+import sys
+name = sys.argv[1]
+with open('flake.nix', 'r') as f:
+    lines = f.readlines()
+entry = (
+    f'\n      # {name}\n'
+    f'      {name} = mkAgent {{\n'
+    f'        name       = "{name}";\n'
+    f'        hostModule = ./hosts/{name}/default.nix;\n'
+    f'      }};\n'
 )
-
-sed -i "${INSERT_LINE}i\\${ENTRY}" flake.nix
+for i, line in enumerate(lines):
+    if line.strip() == '};':
+        lines.insert(i, entry)
+        break
+with open('flake.nix', 'w') as f:
+    f.writelines(lines)
+print(f"  Added {name} to nixosConfigurations")
+PYEOF
 
 # ── Step 4: Add to machines/<host>.yaml ──────────────────────────────────────
 echo "==> Adding $CONTAINER_NAME to $MACHINE_FILE..."
-
 if [ ! -f "$MACHINE_FILE" ]; then
   echo "ERROR: No machine file at $MACHINE_FILE"
   exit 1
 fi
-
 cat >> "$MACHINE_FILE" <<EOF
   - name: $CONTAINER_NAME
     flake_target: $CONTAINER_NAME
@@ -105,7 +83,7 @@ EOF
 
 echo "==> Config files ready:"
 echo "    - hosts/$CONTAINER_NAME/default.nix"
-echo "    - flake.nix (nixosConfigurations.$CONTAINER_NAME)"
+echo "    - flake.nix"
 echo "    - $MACHINE_FILE"
 
 # ── Step 4.5: Create encrypted secrets template ──────────────────────────────
@@ -124,7 +102,7 @@ openrouter_api_key: ""
 YAML
   SOPS_AGE_KEY_FILE=/root/.config/sops/age/keys.txt sops --encrypt --in-place "$SECRETS_FILE" || {
     rm -f "$SECRETS_FILE"
-    echo "ERROR: Failed to encrypt secrets template — check sops and age key at /root/.config/sops/age/keys.txt"
+    echo "ERROR: Failed to encrypt secrets template"
     exit 1
   }
   echo "    Created: $SECRETS_FILE"
