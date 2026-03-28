@@ -59,18 +59,33 @@ sync_config() {
   local container="$1"
   local dest="/etc/nixos"
 
-  # Push only what nix needs: flake, modules, hosts, lib
-  for item in flake.nix flake.lock hosts modules lib .sops.yaml; do
-    if [ -e "$REPO_DIR/$item" ]; then
-      incus file push -r "$REPO_DIR/$item" "$container$dest/" --create-dirs 2>/dev/null || true
-    fi
-  done
+  logger -t "$LOG_TAG" "Syncing nix config to $container:$dest..."
 
-  # Push only this container's secrets (not all hosts' secrets)
+  # Ensure destination exists
+  incus exec "$container" -- mkdir -p "$dest"
+
+  # Use tar to reliably push only what nix needs
+  tar -C "$REPO_DIR" \
+    --exclude='.git' \
+    --exclude='secrets' \
+    --exclude='scripts' \
+    --exclude='systemd' \
+    --exclude='docs' \
+    --exclude='machines' \
+    --exclude='deploy' \
+    --exclude='*.sh' \
+    -cf - \
+    flake.nix flake.lock hosts modules lib .sops.yaml 2>/dev/null \
+    | incus exec "$container" -- tar -C "$dest" -xf -
+
+  # Push only this host's secrets to the container
   if [ -d "$REPO_DIR/secrets/$HOSTNAME" ]; then
-    incus exec "$container" -- mkdir -p "$dest/secrets/$HOSTNAME" 2>/dev/null || true
-    incus file push -r "$REPO_DIR/secrets/$HOSTNAME/." "$container$dest/secrets/$HOSTNAME/" 2>/dev/null || true
+    incus exec "$container" -- mkdir -p "$dest/secrets/$HOSTNAME"
+    tar -C "$REPO_DIR/secrets/$HOSTNAME" -cf - . \
+      | incus exec "$container" -- tar -C "$dest/secrets/$HOSTNAME" -xf -
   fi
+
+  logger -t "$LOG_TAG" "Sync complete for $container"
 }
 
 # Deploy each container
