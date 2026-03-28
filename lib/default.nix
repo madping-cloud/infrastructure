@@ -1,31 +1,30 @@
-{ lib, ... }:
+{ nixpkgs, sops-nix, system, ... }:
 
 # lib/default.nix — Shared helpers for this flake.
 #
 # Import in flake.nix as:
-#   localLib = import ./lib { inherit lib; };
+#   localLib = import ./lib { inherit nixpkgs sops-nix system; };
+#
+# Then use:
+#   nixosConfigurations.silas = localLib.mkAgent { name = "silas"; hostModule = ./hosts/silas/default.nix; };
 
-rec {
-  # Build a NixOS system with common defaults applied.
+{
+  # Build a NixOS agent container config with common modules applied.
+  # Each agent gets: sops-nix, common module, openclaw service module, and its host module.
+  #
   # Usage:
-  #   nixosConfigurations.workbench = localLib.mkContainer {
-  #     inherit nixpkgs system;
-  #     hostModule = ./hosts/thor/containers/openclaw.nix;
+  #   nixosConfigurations.silas = localLib.mkAgent {
+  #     name       = "silas";
+  #     hostModule = ./hosts/silas/default.nix;
   #   };
-  mkSystem = { nixpkgs, system, hostModule, extraModules ? [], specialArgs ? {} }:
-    nixpkgs.lib.nixosSystem {
-      inherit system;
-      specialArgs = specialArgs;
-      modules = [ hostModule ] ++ extraModules;
-    };
-
-  # Convenience: build a container NixOS config (sets boot.isContainer defaults)
-  mkContainer = { nixpkgs, system, hostModule, extraModules ? [], specialArgs ? {} }:
-    mkSystem {
-      inherit nixpkgs system specialArgs;
-      hostModule = hostModule;
-      extraModules = extraModules ++ [
-        { boot.isContainer = lib.mkDefault true; }
-      ];
-    };
+  mkAgent = { name, hostModule }: nixpkgs.lib.nixosSystem {
+    inherit system;
+    specialArgs = { inherit name; inputs = { inherit nixpkgs sops-nix; }; };
+    modules = [
+      sops-nix.nixosModules.sops
+      ../modules/common/default.nix
+      ../modules/services/openclaw.nix
+      hostModule
+    ];
+  };
 }

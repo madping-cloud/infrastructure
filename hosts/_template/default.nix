@@ -1,8 +1,8 @@
-{ modulesPath, pkgs, name, ... }:
+{ config, modulesPath, pkgs, name, ... }:
 
 # Template for a new agent container.
 # 1. Copy this directory: cp -r hosts/_template hosts/<agentname>
-# 2. Set hostName to your agent name
+# 2. Set hostName to your agent name (replace "CHANGE_ME" below)
 # 3. Add nixosConfigurations entry in flake.nix
 # 4. Run: nixos-rebuild switch --flake .#<agentname>
 
@@ -11,8 +11,16 @@
     "${modulesPath}/virtualisation/lxc-container.nix"
   ];
 
+  # Safety net: fail loudly if the template hostname was never changed.
+  assertions = [
+    {
+      assertion = config.networking.hostName != "CHANGE_ME";
+      message   = "You forgot to set the hostname! Edit hosts/<name>/default.nix and replace CHANGE_ME.";
+    }
+  ];
+
   networking = {
-    hostName   = "CHANGE_ME";
+    hostName   = "CHANGE_ME";  # ← CHANGE THIS
     enableIPv6 = false;
     dhcpcd.enable = false;
     useDHCP       = false;
