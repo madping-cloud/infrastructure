@@ -30,10 +30,10 @@
 
     nixosConfigurations = {
 
-      # Silas — executor/craftsman agent (Marc's second brain)
-      silas = mkAgent {
-        name       = "silas";
-        hostModule = ./hosts/silas/default.nix;
+      # Cole — infrastructure agent (Marc's second brain)
+      cole = mkAgent {
+        name       = "cole";
+        hostModule = ./hosts/cole/default.nix;
       };
 
       # Aurora — Connie's companion agent
@@ -56,7 +56,7 @@
       packages = with pkgs; [ git sops age jq nixos-rebuild ];
       shellHook = ''
         echo "🔧 madping-cloud infrastructure"
-        echo "   nixos-rebuild switch --flake .#silas   — rebuild silas"
+        echo "   nixos-rebuild switch --flake .#cole    — rebuild cole"
         echo "   nixos-rebuild switch --flake .#aurora  — rebuild aurora"
         echo "   nixos-rebuild switch --flake .#atlas   — rebuild atlas"
       '';
