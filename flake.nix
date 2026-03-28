@@ -43,12 +43,7 @@
         hostModule = ./hosts/aurora/default.nix;
       };
 
-      # atlas
-      atlas = mkAgent {
-        name       = "atlas";
-        hostModule = ./hosts/atlas/default.nix;
-      };
-    };
+};
 
     # ── Dev Shell ─────────────────────────────────────────────────────────────
     devShells.${system}.default = pkgs.mkShell {
