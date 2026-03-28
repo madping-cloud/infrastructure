@@ -6,7 +6,7 @@
 # any containers defined in machines/<hostname>.yaml if there are new commits.
 #
 # Logs to systemd journal via logger (SyslogIdentifier=gitops-pull).
-# Prevent concurrent runs with a lockfile.
+# Prevents concurrent runs with a lockfile.
 
 set -euo pipefail
 
@@ -46,13 +46,32 @@ if [ ! -f "$MACHINE_FILE" ]; then
 fi
 
 # Parse containers from YAML (simple grep — no yq dependency required)
-# Matches lines like:  "  - name: silas"
+# Matches lines like:  "  - name: cole"
 CONTAINERS=$(grep -oP '^\s+- name:\s+\K\S+' "$MACHINE_FILE" || true)
 
 if [ -z "$CONTAINERS" ]; then
   logger -t "$LOG_TAG" "No containers defined for $HOSTNAME, nothing to deploy"
   exit 0
 fi
+
+# Sync only the nix config files to each container (not .git, secrets, scripts, etc.)
+sync_config() {
+  local container="$1"
+  local dest="/etc/nixos"
+
+  # Push only what nix needs: flake, modules, hosts, lib
+  for item in flake.nix flake.lock hosts modules lib .sops.yaml; do
+    if [ -e "$REPO_DIR/$item" ]; then
+      incus file push -r "$REPO_DIR/$item" "$container$dest/" --create-dirs 2>/dev/null || true
+    fi
+  done
+
+  # Push only this container's secrets (not all hosts' secrets)
+  if [ -d "$REPO_DIR/secrets/$HOSTNAME" ]; then
+    incus exec "$container" -- mkdir -p "$dest/secrets/$HOSTNAME" 2>/dev/null || true
+    incus file push -r "$REPO_DIR/secrets/$HOSTNAME/." "$container$dest/secrets/$HOSTNAME/" 2>/dev/null || true
+  fi
+}
 
 # Deploy each container
 FAILURES=0
@@ -61,8 +80,8 @@ for CONTAINER in $CONTAINERS; do
 
   # Check container is running
   if incus exec "$CONTAINER" -- true 2>/dev/null; then
-    # Sync flake into container
-    incus file push -r "$REPO_DIR/." "$CONTAINER/etc/nixos/" --create-dirs 2>/dev/null
+    # Sync nix config into container
+    sync_config "$CONTAINER"
 
     if incus exec "$CONTAINER" -- nixos-rebuild switch --flake "/etc/nixos#$CONTAINER" 2>&1 | logger -t "$LOG_TAG"; then
       logger -t "$LOG_TAG" "✓ $CONTAINER deployed successfully"
