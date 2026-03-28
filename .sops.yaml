@@ -1,0 +1,31 @@
+# .sops.yaml — sops-nix key configuration
+#
+# This file tells sops which keys to use when encrypting/decrypting secrets.
+#
+# Setup steps:
+# 1. Generate an age key on Thor:
+#      age-keygen -o /root/.config/sops/age/keys.txt
+#      # Note the public key: age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+#
+# 2. Replace the placeholder below with your actual age public key.
+#
+# 3. Encrypt secrets:
+#      sops --encrypt --in-place secrets/thor/secrets.yaml
+#
+# 4. Add sops-nix to flake.nix inputs and wire up modules.
+#
+# Reference: https://github.com/Mic92/sops-nix
+
+creation_rules:
+  # Thor container secrets — encrypted with Thor's age key
+  - path_regex: secrets/thor/.*\.yaml$
+    age:
+      - &thor_key age1REPLACEME_WITH_YOUR_AGE_PUBLIC_KEY
+
+  # Global/shared secrets
+  - path_regex: secrets/.*\.yaml$
+    age:
+      - *thor_key
+
+keys:
+  - &thor_key age1REPLACEME_WITH_YOUR_AGE_PUBLIC_KEY
