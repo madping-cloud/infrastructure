@@ -4,78 +4,67 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
 
-    # Secrets management — enable when age keys are generated
-    # sops-nix = {
-    #   url = "github:Mic92/sops-nix";
-    #   inputs.nixpkgs.follows = "nixpkgs";
-    # };
-
-    # Deployment tool (alternative to nixos-rebuild)
-    # colmena.url = "github:zhaofengli/colmena";
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, ... } @ inputs:
+  outputs = { self, nixpkgs, sops-nix, ... } @ inputs:
   let
-    system   = "x86_64-linux";
-    pkgs     = nixpkgs.legacyPackages.${system};
-    lib      = nixpkgs.lib;
+    system = "x86_64-linux";
+    pkgs   = nixpkgs.legacyPackages.${system};
+    lib    = nixpkgs.lib;
 
-    # Local helpers
-    localLib = import ./lib { inherit lib; };
-
-    # Common specialArgs passed to every nixosSystem
-    commonArgs = { inherit inputs; };
+    # Helper: build a NixOS container config
+    mkAgent = { name, hostModule }: nixpkgs.lib.nixosSystem {
+      inherit system;
+      specialArgs = { inherit inputs name; };
+      modules = [
+        sops-nix.nixosModules.sops
+        ./modules/common/default.nix
+        ./modules/services/openclaw.nix
+        hostModule
+      ];
+    };
 
   in {
 
-    # ── NixOS Configurations ─────────────────────────────────────────────────
-    #
-    # workbench   — Incus container on Thor running OpenClaw
-    # thor        — Bare-metal Incus host (future: full NixOS install)
-    # zimaboard   — Low-power SBC (future)
+    # ── Agent Containers ──────────────────────────────────────────────────────
+    # Each agent is a NixOS Incus container with OpenClaw installed.
+    # Add a new agent: copy hosts/_template/, set name, add entry here.
 
     nixosConfigurations = {
 
-      # OpenClaw container — primary workbench
-      workbench = localLib.mkContainer {
-        inherit nixpkgs system;
-        hostModule  = ./hosts/thor/containers/openclaw.nix;
-        specialArgs = commonArgs;
+      # Silas — executor/craftsman agent (Marc's second brain)
+      silas = mkAgent {
+        name       = "silas";
+        hostModule = ./hosts/silas/default.nix;
       };
 
-      # Thor host config (for future full NixOS install on host)
-      thor = localLib.mkSystem {
-        inherit nixpkgs system;
-        hostModule  = ./hosts/thor/default.nix;
-        specialArgs = commonArgs;
+      # Aurora — Connie's companion agent
+      aurora = mkAgent {
+        name       = "aurora";
+        hostModule = ./hosts/aurora/default.nix;
       };
 
-      # ZimaBoard (template — fill in when provisioning)
-      zimaboard = localLib.mkSystem {
-        inherit nixpkgs system;
-        hostModule  = ./hosts/zimaboard/default.nix;
-        specialArgs = commonArgs;
+      # Atlas — Marc's primary assistant (currently bare Thor, future: container)
+      atlas = mkAgent {
+        name       = "atlas";
+        hostModule = ./hosts/atlas/default.nix;
       };
 
     };
 
     # ── Dev Shell ─────────────────────────────────────────────────────────────
-    # Enter with: nix develop
     devShells.${system}.default = pkgs.mkShell {
       name = "infra-dev";
-      packages = with pkgs; [
-        nixos-rebuild
-        colmena
-        git
-        sops
-        age
-        jq
-      ];
+      packages = with pkgs; [ git sops age jq nixos-rebuild ];
       shellHook = ''
-        echo "🔧 madping-cloud infrastructure dev shell"
-        echo "   nix flake check          — validate all configs"
-        echo "   colmena apply            — deploy all hosts"
-        echo "   ./deploy/scripts/deploy.sh workbench — deploy workbench"
+        echo "🔧 madping-cloud infrastructure"
+        echo "   nixos-rebuild switch --flake .#silas   — rebuild silas"
+        echo "   nixos-rebuild switch --flake .#aurora  — rebuild aurora"
+        echo "   nixos-rebuild switch --flake .#atlas   — rebuild atlas"
       '';
     };
 

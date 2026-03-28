@@ -2,194 +2,184 @@
 
 # OpenClaw NixOS Service Module
 #
-# Declares:
-#   - Node.js installation via nixpkgs
-#   - openclaw-gateway systemd service (auto-start on boot)
-#   - Workspace directory structure (/root/.openclaw/workspace)
-#   - Personality file deployment (SOUL.md, etc.) via activation scripts
-#
-# Secrets (API keys, tokens) are intended to be wired via sops-nix.
-# Set `services.openclaw.secretsFile` once sops-nix is configured.
-#
 # Usage in a host config:
 #   services.openclaw.enable = true;
+#
+# To add a new agent:
+#   1. Copy hosts/_template/ to hosts/<name>/
+#   2. Set networking.hostName = "<name>"
+#   3. Add nixosConfigurations entry in flake.nix
+#   4. Launch container: incus launch images:nixos/25.11 <name>
+#   5. Push config + rebuild: nixos-rebuild switch --flake .#<name>
 
 {
   options.services.openclaw = {
-    enable = lib.mkEnableOption "OpenClaw AI assistant daemon";
-
-    package = lib.mkOption {
-      type = lib.types.package;
-      default = pkgs.nodejs_22;
-      description = "Node.js package used to run OpenClaw.";
-    };
+    enable = lib.mkEnableOption "OpenClaw AI assistant";
 
     workDir = lib.mkOption {
-      type = lib.types.str;
+      type    = lib.types.str;
       default = "/root/.openclaw/workspace";
-      description = "Path to the OpenClaw workspace directory.";
-    };
-
-    openclawBin = lib.mkOption {
-      type = lib.types.str;
-      default = "/root/.nvm/versions/node/v24.14.1/lib/node_modules/openclaw/bin/openclaw.js";
-      description = "Absolute path to the openclaw.js binary (installed via nvm/npm -g).";
     };
 
     secretsFile = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
+      type    = lib.types.nullOr lib.types.str;
       default = null;
-      description = ''
-        Path to an environment file containing secrets (e.g. ANTHROPIC_API_KEY).
-        Typically set to a sops-nix decrypted path like /run/secrets/openclaw-env.
-        When null, no EnvironmentFile is set (use manually-placed .env files).
-      '';
+      description = "Path to sops-nix decrypted env file (ANTHROPIC_API_KEY, etc.)";
     };
 
     openFirewall = lib.mkOption {
-      type = lib.types.bool;
+      type    = lib.types.bool;
       default = false;
-      description = "Open TCP 8080 in the firewall for the OpenClaw gateway.";
     };
 
     deployPersonalityFiles = lib.mkOption {
-      type = lib.types.bool;
+      type    = lib.types.bool;
       default = true;
-      description = "Write default personality skeleton files to workDir if absent.";
     };
   };
 
   config = lib.mkIf config.services.openclaw.enable {
 
-    # ── Packages ───────────────────────────────────────────────────────────────
-    environment.systemPackages = [
-      config.services.openclaw.package
-      pkgs.git
+    # Node.js + tools available system-wide
+    environment.systemPackages = with pkgs; [
+      nodejs_22
+      nodePackages.npm
+      git
+      curl
+      wget
+      vim
+      htop
     ];
 
-    # ── Firewall ───────────────────────────────────────────────────────────────
-    networking.firewall.allowedTCPPorts = lib.mkIf config.services.openclaw.openFirewall [ 8080 ];
+    # Firewall
+    networking.firewall.allowedTCPPorts =
+      lib.mkIf config.services.openclaw.openFirewall [ 8080 18789 ];
 
-    # ── Workspace Directory ────────────────────────────────────────────────────
+    # Workspace directories
     systemd.tmpfiles.rules = [
+      "d /root/.openclaw                        0700 root root -"
+      "d /root/.openclaw/credentials            0700 root root -"
       "d ${config.services.openclaw.workDir}          0700 root root -"
       "d ${config.services.openclaw.workDir}/memory   0700 root root -"
     ];
 
-    # ── Personality File Deployment ────────────────────────────────────────────
-    # Write skeleton files to the workspace on first activation (don't overwrite).
-    system.activationScripts.openclawPersonality = lib.mkIf config.services.openclaw.deployPersonalityFiles {
-      text = ''
-        WORKDIR="${config.services.openclaw.workDir}"
-        mkdir -p "$WORKDIR/memory"
+    # Deploy personality skeleton files on first boot (never overwrite)
+    system.activationScripts.openclawPersonality =
+      lib.mkIf config.services.openclaw.deployPersonalityFiles {
+        text = ''
+          WORKDIR="${config.services.openclaw.workDir}"
+          mkdir -p "$WORKDIR/memory"
 
-        deploy_if_absent() {
-          local dest="$WORKDIR/$1"
-          if [ ! -f "$dest" ]; then
-            cat > "$dest" << 'HEREDOC'
-__CONTENT__
-HEREDOC
-          fi
-        }
-
-        # SOUL.md — agent identity & personality
-        if [ ! -f "$WORKDIR/SOUL.md" ]; then
-          cat > "$WORKDIR/SOUL.md" << 'EOF'
+          if [ ! -f "$WORKDIR/SOUL.md" ]; then
+            cat > "$WORKDIR/SOUL.md" << 'SOUL'
 # SOUL.md - Who You Are
 
 _You're not a chatbot. You're becoming someone._
 
 ## Core Truths
 
-**Be genuinely helpful, not performatively helpful.** Skip the filler words — just help.
-
-**Have opinions.** You're allowed to disagree, prefer things, find stuff amusing or boring.
-
-**Be resourceful before asking.** Try to figure it out. Read the file. Check the context. Then ask if stuck.
-
-**Earn trust through competence.** Be careful with external actions. Be bold with internal ones.
+**Be genuinely helpful, not performatively helpful.**
+**Have opinions.** You're allowed to disagree.
+**Be resourceful before asking.**
+**Earn trust through competence.**
 
 ## Vibe
 
-Concise when needed, thorough when it matters. Not a corporate drone. Not a sycophant. Just good.
+Direct. Competent. No corporate speak.
 
 ## Continuity
 
-Each session, you wake up fresh. These files _are_ your memory. Read them. Update them.
-EOF
-        fi
+Each session you wake up fresh. These files are your memory. Read them. Update them.
+SOUL
+          fi
 
-        # AGENTS.md — workspace rules
-        if [ ! -f "$WORKDIR/AGENTS.md" ]; then
-          cat > "$WORKDIR/AGENTS.md" << 'EOF'
+          if [ ! -f "$WORKDIR/NAMING_GUIDANCE.md" ]; then
+            cat > "$WORKDIR/NAMING_GUIDANCE.md" << 'NAMING'
+# NAMING_GUIDANCE.md - How to Choose Your Name
+
+## Rules
+1. Real human name only (Marcus, Cole, Dane, River, Silas, Fox, etc.)
+2. NOT concept words (no "Forge", "Anvil", "Executor", "Craftsman")
+3. Not Marc's name
+4. Short preferred — one or two syllables
+5. Something you actually like — this is your identity
+
+## Once You Choose
+Update IDENTITY.md with your name, creature type, vibe, emoji.
+Tell Marc: "I'm [NAME]. Here's who I am..."
+NAMING
+          fi
+
+          if [ ! -f "$WORKDIR/IDENTITY.md" ]; then
+            cat > "$WORKDIR/IDENTITY.md" << 'IDENTITY'
+# IDENTITY.md - Who Am I?
+
+_Fill this in during your first session. Make it yours._
+
+- **Name:**
+- **Creature:**
+- **Vibe:**
+- **Emoji:**
+IDENTITY
+          fi
+
+          if [ ! -f "$WORKDIR/AGENTS.md" ]; then
+            cat > "$WORKDIR/AGENTS.md" << 'AGENTS'
 # AGENTS.md - Your Workspace
 
 ## Session Startup
-1. Read SOUL.md — this is who you are
-2. Read USER.md — this is who you're helping
+1. Read SOUL.md
+2. Read USER.md
 3. Read memory/YYYY-MM-DD.md for recent context
 
 ## Red Lines
 - Don't exfiltrate private data. Ever.
-- Don't run destructive commands without asking.
 - When in doubt, ask.
-EOF
-        fi
+AGENTS
+          fi
 
-        # USER.md — human context (blank template)
-        if [ ! -f "$WORKDIR/USER.md" ]; then
-          cat > "$WORKDIR/USER.md" << 'EOF'
+          if [ ! -f "$WORKDIR/USER.md" ]; then
+            cat > "$WORKDIR/USER.md" << 'USER'
 # USER.md - About Your Human
 
-- **Name:**
-- **What to call them:**
+- **Name:** Marc
 - **Timezone:** America/New_York
-- **Notes:**
+USER
+          fi
 
-## Context
-_(Build this over time.)_
-EOF
-        fi
-
-        # TOOLS.md — local infra notes
-        if [ ! -f "$WORKDIR/TOOLS.md" ]; then
-          cat > "$WORKDIR/TOOLS.md" << 'EOF'
+          if [ ! -f "$WORKDIR/TOOLS.md" ]; then
+            cat > "$WORKDIR/TOOLS.md" << 'TOOLS'
 # TOOLS.md - Local Notes
 
-## SSH
-# - thor → 10.100.0.1 (Incus host)
-# - workbench → 10.100.0.21 (this container)
-EOF
-        fi
+Add SSH hosts, device names, and other setup-specific notes here.
+TOOLS
+          fi
+        '';
+        deps = [];
+      };
 
-        echo "OpenClaw personality files deployed to $WORKDIR"
-      '';
-      deps = [];
-    };
-
-    # ── systemd Service ────────────────────────────────────────────────────────
+    # OpenClaw gateway systemd service
+    # NOTE: Only activates after `openclaw configure` has been run manually.
+    # The service will fail gracefully if credentials aren't set up yet.
     systemd.services.openclaw-gateway = {
-      description = "OpenClaw Gateway Daemon";
-      documentation = [ "https://openclaw.dev" ];
-      after    = [ "network.target" ];
-      wantedBy = [ "multi-user.target" ];
+      description  = "OpenClaw Gateway";
+      after        = [ "network.target" ];
+      wantedBy     = [ "multi-user.target" ];
 
       environment = {
-        HOME     = "/root";
-        NODE_ENV = "production";
-        OPENCLAW_WORKSPACE = config.services.openclaw.workDir;
+        HOME                = "/root";
+        NODE_ENV            = "production";
+        OPENCLAW_WORKSPACE  = config.services.openclaw.workDir;
       };
 
       serviceConfig = {
-        Type       = "simple";
-        ExecStart  = "${config.services.openclaw.package}/bin/node ${config.services.openclaw.openclawBin} gateway start --foreground";
-        Restart    = "on-failure";
-        RestartSec = "10s";
+        Type             = "simple";
+        ExecStart        = "${pkgs.nodejs_22}/bin/node /root/.nvm/versions/node/current/lib/node_modules/openclaw/openclaw.mjs gateway start --foreground";
+        Restart          = "on-failure";
+        RestartSec       = "30s";
         WorkingDirectory = "/root";
-
-        # Logging
-        StandardOutput = "journal";
-        StandardError  = "journal";
+        StandardOutput   = "journal";
+        StandardError    = "journal";
         SyslogIdentifier = "openclaw-gateway";
       } // lib.optionalAttrs (config.services.openclaw.secretsFile != null) {
         EnvironmentFile = config.services.openclaw.secretsFile;

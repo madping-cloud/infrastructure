@@ -1,18 +1,12 @@
 { modulesPath, pkgs, name, ... }:
 
-# Template for a new agent container.
-# 1. Copy this directory: cp -r hosts/_template hosts/<agentname>
-# 2. Set hostName to your agent name
-# 3. Add nixosConfigurations entry in flake.nix
-# 4. Run: nixos-rebuild switch --flake .#<agentname>
-
 {
   imports = [
     "${modulesPath}/virtualisation/lxc-container.nix"
   ];
 
   networking = {
-    hostName   = "CHANGE_ME";
+    hostName   = "atlas";
     enableIPv6 = false;
     dhcpcd.enable = false;
     useDHCP       = false;
@@ -31,6 +25,7 @@
     };
   };
 
+  # OpenClaw service
   services.openclaw = {
     enable = true;
     openFirewall = true;
