@@ -1,49 +1,24 @@
 { config, modulesPath, pkgs, name, ... }:
-
-# Template for a new agent container.
-# 1. Copy this directory: cp -r hosts/_template hosts/<agentname>
-# 2. Set hostName to your agent name (replace "CHANGE_ME" below)
-# 3. Add nixosConfigurations entry in flake.nix
-# 4. Run: nixos-rebuild switch --flake .#<agentname>
-
 {
-  imports = [
-    "${modulesPath}/virtualisation/lxc-container.nix"
-  ];
-
-  # Safety net: fail loudly if the template hostname was never changed.
-  assertions = [
-    {
-      assertion = config.networking.hostName != "CHANGE_ME";
-      message   = "You forgot to set the hostname! Edit hosts/<name>/default.nix and replace CHANGE_ME.";
-    }
-  ];
-
-  networking = {
-    hostName   = "CHANGE_ME";  # ← CHANGE THIS
-    enableIPv6 = false;
-    dhcpcd.enable = false;
-    useDHCP       = false;
-    useHostResolvConf = false;
-  };
-
-  systemd.network = {
-    enable = true;
-    networks."50-eth0" = {
-      matchConfig.Name = "eth0";
-      networkConfig = {
-        DHCP         = "ipv4";
-        IPv6AcceptRA = false;
-      };
-      linkConfig.RequiredForOnline = "routable";
-    };
-  };
-
-  services.openclaw = {
-    enable = true;
-    openFirewall = true;
-    deployPersonalityFiles = true;
-  };
-
+  imports = [ "${modulesPath}/virtualisation/lxc-container.nix" ];
+  assertions = [{ assertion = config.networking.hostName != "CHANGE_ME"; message = "Set the hostname!"; }];
+  networking = { hostName = "CHANGE_ME"; enableIPv6 = false; dhcpcd.enable = false; useDHCP = false; useHostResolvConf = false; };
+  systemd.network = { enable = true; networks."50-eth0" = { matchConfig.Name = "eth0"; networkConfig = { DHCP = "ipv4"; IPv6AcceptRA = false; }; linkConfig.RequiredForOnline = "routable"; }; };
+  sops.age.keyFile = "/var/lib/sops-nix/key.txt";
+  sops.validateSopsFiles = false;
+  sops.secrets.shared_anthropic_api_key  = { sopsFile = "/etc/nixos/secrets/thor/shared.yaml"; key = "anthropic_api_key"; };
+  sops.secrets.shared_openai_api_key     = { sopsFile = "/etc/nixos/secrets/thor/shared.yaml"; key = "openai_api_key"; };
+  sops.secrets.shared_google_ai_api_key  = { sopsFile = "/etc/nixos/secrets/thor/shared.yaml"; key = "google_ai_api_key"; };
+  sops.secrets.shared_groq_api_key       = { sopsFile = "/etc/nixos/secrets/thor/shared.yaml"; key = "groq_api_key"; };
+  sops.secrets.shared_openrouter_api_key = { sopsFile = "/etc/nixos/secrets/thor/shared.yaml"; key = "openrouter_api_key"; };
+  sops.secrets.discord_token       = { sopsFile = "/etc/nixos/secrets/thor/CHANGE_ME.yaml"; key = "discord_token"; };
+  sops.secrets.telegram_token      = { sopsFile = "/etc/nixos/secrets/thor/CHANGE_ME.yaml"; key = "telegram_token"; };
+  sops.secrets.gateway_token       = { sopsFile = "/etc/nixos/secrets/thor/CHANGE_ME.yaml"; key = "gateway_token"; };
+  sops.secrets.anthropic_api_key   = { sopsFile = "/etc/nixos/secrets/thor/CHANGE_ME.yaml"; key = "anthropic_api_key"; };
+  sops.secrets.openai_api_key      = { sopsFile = "/etc/nixos/secrets/thor/CHANGE_ME.yaml"; key = "openai_api_key"; };
+  sops.secrets.google_ai_api_key   = { sopsFile = "/etc/nixos/secrets/thor/CHANGE_ME.yaml"; key = "google_ai_api_key"; };
+  sops.secrets.groq_api_key        = { sopsFile = "/etc/nixos/secrets/thor/CHANGE_ME.yaml"; key = "groq_api_key"; };
+  sops.secrets.openrouter_api_key  = { sopsFile = "/etc/nixos/secrets/thor/CHANGE_ME.yaml"; key = "openrouter_api_key"; };
+  services.openclaw = { enable = true; openFirewall = true; deployPersonalityFiles = true; secretsFile = "/run/openclaw-env"; };
   system.stateVersion = "25.11";
 }
