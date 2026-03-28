@@ -18,7 +18,7 @@
 # Reference: https://github.com/Mic92/sops-nix
 
 keys:
-  - &thor age1REPLACEME_WITH_THOR_AGE_PUBLIC_KEY
+  - &thor age1z4rca47hqgtxx2wdga6f7etyj74lja0qpsnc0lzmupkx7fs5n3gs0d5xgm
   - &loki age1REPLACEME_WITH_LOKI_AGE_PUBLIC_KEY
 
 creation_rules:
