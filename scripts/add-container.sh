@@ -29,7 +29,6 @@ fi
 
 cd "$REPO_DIR"
 
-# ── Step 1: Check for conflicts ──────────────────────────────────────────────
 if [ -d "hosts/$CONTAINER_NAME" ]; then
   echo "ERROR: hosts/$CONTAINER_NAME/ already exists"
   exit 1
@@ -42,12 +41,10 @@ fi
 
 echo "==> Creating container: $CONTAINER_NAME on $HOSTNAME"
 
-# ── Step 2: Copy template and set hostname ───────────────────────────────────
 echo "==> Setting up hosts/$CONTAINER_NAME/default.nix..."
 cp -r hosts/_template "hosts/$CONTAINER_NAME"
 sed -i "s/CHANGE_ME/$CONTAINER_NAME/g" "hosts/$CONTAINER_NAME/default.nix"
 
-# ── Step 3: Add nixosConfigurations entry to flake.nix ───────────────────────
 echo "==> Adding $CONTAINER_NAME to flake.nix..."
 python3 - "$CONTAINER_NAME" << 'PYEOF'
 import sys
@@ -70,7 +67,6 @@ with open('flake.nix', 'w') as f:
 print(f"  Added {name} to nixosConfigurations")
 PYEOF
 
-# ── Step 4: Add to machines/<host>.yaml ──────────────────────────────────────
 echo "==> Adding $CONTAINER_NAME to $MACHINE_FILE..."
 if [ ! -f "$MACHINE_FILE" ]; then
   echo "ERROR: No machine file at $MACHINE_FILE"
@@ -86,7 +82,6 @@ echo "    - hosts/$CONTAINER_NAME/default.nix"
 echo "    - flake.nix"
 echo "    - $MACHINE_FILE"
 
-# ── Step 4.5: Create encrypted secrets template ──────────────────────────────
 SECRETS_FILE="$REPO_DIR/secrets/$HOSTNAME/$CONTAINER_NAME.yaml"
 if [ ! -f "$SECRETS_FILE" ]; then
   echo "==> Creating encrypted secrets template for $CONTAINER_NAME..."
@@ -118,7 +113,6 @@ if [ -n "$NO_DEPLOY" ]; then
   exit 0
 fi
 
-# ── Step 5: Launch Incus container ───────────────────────────────────────────
 if incus info "$CONTAINER_NAME" &>/dev/null; then
   echo "==> Container $CONTAINER_NAME already exists in Incus"
 else
@@ -139,7 +133,6 @@ else
   fi
 fi
 
-# ── Step 6: Deploy ───────────────────────────────────────────────────────────
 echo "==> Deploying NixOS config to $CONTAINER_NAME..."
 ./scripts/deploy.sh "$CONTAINER_NAME"
 
