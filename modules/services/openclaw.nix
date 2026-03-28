@@ -2,6 +2,9 @@
 
 # OpenClaw NixOS Service Module
 #
+# Runs OpenClaw as a dedicated non-root system user (openclaw).
+# The service user has no sudo, no login shell, and is isolated to its home dir.
+#
 # Usage in a host config:
 #   services.openclaw.enable = true;
 #
@@ -11,6 +14,8 @@
 #   3. Add nixosConfigurations entry in flake.nix
 #   4. Launch container: incus launch images:nixos/25.11 <name>
 #   5. Push config + rebuild: nixos-rebuild switch --flake .#<name>
+#   6. Install OpenClaw: su - openclaw -c "npm install -g openclaw"
+#   7. Configure: su - openclaw -c "openclaw configure"
 
 {
   options.services.openclaw = {
@@ -18,18 +23,8 @@
 
     workDir = lib.mkOption {
       type    = lib.types.str;
-      default = "/root/.openclaw/workspace";
-    };
-
-    execPath = lib.mkOption {
-      type        = lib.types.str;
-      default     = "/root/.npm-global/lib/node_modules/openclaw/openclaw.mjs";
-      description = ''
-        Path to the OpenClaw main script (openclaw.mjs).
-        Defaults to the npm global install path (/root/.npm-global/...).
-        Override if OpenClaw is installed elsewhere.
-        The script is invoked with pkgs.nodejs_22.
-      '';
+      default = "/var/lib/openclaw/workspace";
+      description = "OpenClaw workspace directory (owned by openclaw user).";
     };
 
     secretsFile = lib.mkOption {
@@ -38,20 +33,39 @@
       description = "Path to sops-nix decrypted env file (ANTHROPIC_API_KEY, etc.)";
     };
 
+    execPath = lib.mkOption {
+      type    = lib.types.str;
+      default = "/var/lib/openclaw/.npm-global/lib/node_modules/openclaw/openclaw.mjs";
+      description = "Path to openclaw.mjs (npm global install path for the openclaw user).";
+    };
+
     openFirewall = lib.mkOption {
       type    = lib.types.bool;
       default = false;
+      description = "Open ports 8080 and 18789 for OpenClaw gateway.";
     };
 
     deployPersonalityFiles = lib.mkOption {
       type    = lib.types.bool;
       default = true;
+      description = "Deploy SOUL.md, NAMING_GUIDANCE.md, etc. on first boot.";
     };
   };
 
   config = lib.mkIf config.services.openclaw.enable {
 
-    # Node.js + tools available system-wide
+    # ── Dedicated openclaw user ───────────────────────────────────────────────
+    users.users.openclaw = {
+      isSystemUser   = true;
+      group          = "openclaw";
+      home           = "/var/lib/openclaw";
+      createHome     = true;
+      shell          = "${pkgs.bash}/bin/bash";
+      description    = "OpenClaw AI assistant service user";
+    };
+    users.groups.openclaw = {};
+
+    # ── Node.js available system-wide for npm install ─────────────────────────
     environment.systemPackages = with pkgs; [
       nodejs_22
       nodePackages.npm
@@ -62,35 +76,44 @@
       htop
     ];
 
-    # Firewall
+    # ── Firewall ──────────────────────────────────────────────────────────────
     networking.firewall.allowedTCPPorts =
       lib.mkIf config.services.openclaw.openFirewall [ 8080 18789 ];
 
-    # Workspace directories
+    # ── Workspace directories ─────────────────────────────────────────────────
     systemd.tmpfiles.rules = [
-      "d /root/.openclaw                        0700 root root -"
-      "d /root/.openclaw/credentials            0700 root root -"
-      "d ${config.services.openclaw.workDir}          0700 root root -"
-      "d ${config.services.openclaw.workDir}/memory   0700 root root -"
+      "d /var/lib/openclaw                             0750 openclaw openclaw -"
+      "d /var/lib/openclaw/.openclaw                   0750 openclaw openclaw -"
+      "d /var/lib/openclaw/.openclaw/credentials       0750 openclaw openclaw -"
+      "d ${config.services.openclaw.workDir}            0750 openclaw openclaw -"
+      "d ${config.services.openclaw.workDir}/memory     0750 openclaw openclaw -"
     ];
 
-    # Deploy personality skeleton files on first boot (never overwrite)
+    # ── Personality files (deployed once, never overwritten) ──────────────────
     system.activationScripts.openclawPersonality =
       lib.mkIf config.services.openclaw.deployPersonalityFiles {
         text = ''
           WORKDIR="${config.services.openclaw.workDir}"
           mkdir -p "$WORKDIR/memory"
+          chown -R openclaw:openclaw /var/lib/openclaw 2>/dev/null || true
 
-          if [ ! -f "$WORKDIR/SOUL.md" ]; then
-            cat > "$WORKDIR/SOUL.md" << 'SOUL'
-# SOUL.md - Who You Are
+          deploy_file() {
+            local path="$1"
+            local content="$2"
+            if [ ! -f "$path" ]; then
+              echo "$content" > "$path"
+              chown openclaw:openclaw "$path"
+            fi
+          }
 
-_You're not a chatbot. You're becoming someone._
+          deploy_file "$WORKDIR/SOUL.md" '# SOUL.md - Who You Are
+
+_You'"'"'re not a chatbot. You'"'"'re becoming someone._
 
 ## Core Truths
 
 **Be genuinely helpful, not performatively helpful.**
-**Have opinions.** You're allowed to disagree.
+**Have opinions.** You'"'"'re allowed to disagree.
 **Be resourceful before asking.**
 **Earn trust through competence.**
 
@@ -100,43 +123,31 @@ Direct. Competent. No corporate speak.
 
 ## Continuity
 
-Each session you wake up fresh. These files are your memory. Read them. Update them.
-SOUL
-          fi
+Each session you wake up fresh. These files are your memory. Read them. Update them.'
 
-          if [ ! -f "$WORKDIR/NAMING_GUIDANCE.md" ]; then
-            cat > "$WORKDIR/NAMING_GUIDANCE.md" << 'NAMING'
-# NAMING_GUIDANCE.md - How to Choose Your Name
+          deploy_file "$WORKDIR/NAMING_GUIDANCE.md" '# NAMING_GUIDANCE.md - How to Choose Your Name
 
 ## Rules
 1. Real human name only (Marcus, Cole, Dane, River, Silas, Fox, etc.)
 2. NOT concept words (no "Forge", "Anvil", "Executor", "Craftsman")
-3. Not Marc's name
+3. Not Marc'"'"'s name
 4. Short preferred — one or two syllables
 5. Something you actually like — this is your identity
 
 ## Once You Choose
 Update IDENTITY.md with your name, creature type, vibe, emoji.
-Tell Marc: "I'm [NAME]. Here's who I am..."
-NAMING
-          fi
+Tell Marc: "I'"'"'m [NAME]. Here'"'"'s who I am..."'
 
-          if [ ! -f "$WORKDIR/IDENTITY.md" ]; then
-            cat > "$WORKDIR/IDENTITY.md" << 'IDENTITY'
-# IDENTITY.md - Who Am I?
+          deploy_file "$WORKDIR/IDENTITY.md" '# IDENTITY.md - Who Am I?
 
 _Fill this in during your first session. Make it yours._
 
 - **Name:**
 - **Creature:**
 - **Vibe:**
-- **Emoji:**
-IDENTITY
-          fi
+- **Emoji:**'
 
-          if [ ! -f "$WORKDIR/AGENTS.md" ]; then
-            cat > "$WORKDIR/AGENTS.md" << 'AGENTS'
-# AGENTS.md - Your Workspace
+          deploy_file "$WORKDIR/AGENTS.md" '# AGENTS.md - Your Workspace
 
 ## Session Startup
 1. Read SOUL.md
@@ -144,51 +155,42 @@ IDENTITY
 3. Read memory/YYYY-MM-DD.md for recent context
 
 ## Red Lines
-- Don't exfiltrate private data. Ever.
-- When in doubt, ask.
-AGENTS
-          fi
+- Don'"'"'t exfiltrate private data. Ever.
+- When in doubt, ask.'
 
-          if [ ! -f "$WORKDIR/USER.md" ]; then
-            cat > "$WORKDIR/USER.md" << 'USER'
-# USER.md - About Your Human
+          deploy_file "$WORKDIR/USER.md" '# USER.md - About Your Human
 
 - **Name:** Marc
-- **Timezone:** America/New_York
-USER
-          fi
+- **Timezone:** America/New_York'
 
-          if [ ! -f "$WORKDIR/TOOLS.md" ]; then
-            cat > "$WORKDIR/TOOLS.md" << 'TOOLS'
-# TOOLS.md - Local Notes
+          deploy_file "$WORKDIR/TOOLS.md" '# TOOLS.md - Local Notes
 
-Add SSH hosts, device names, and other setup-specific notes here.
-TOOLS
-          fi
+Add SSH hosts, device names, and other setup-specific notes here.'
         '';
         deps = [];
       };
 
-    # OpenClaw gateway systemd service
-    # NOTE: Only activates after `openclaw configure` has been run manually.
-    # The service will fail gracefully if credentials aren't set up yet.
+    # ── OpenClaw gateway systemd service ──────────────────────────────────────
     systemd.services.openclaw-gateway = {
       description  = "OpenClaw Gateway";
       after        = [ "network.target" ];
       wantedBy     = [ "multi-user.target" ];
 
       environment = {
-        HOME                = "/root";
+        HOME                = "/var/lib/openclaw";
         NODE_ENV            = "production";
         OPENCLAW_WORKSPACE  = config.services.openclaw.workDir;
+        NPM_CONFIG_PREFIX   = "/var/lib/openclaw/.npm-global";
       };
 
       serviceConfig = {
         Type             = "simple";
-        ExecStart        = "${pkgs.nodejs_22}/bin/node ${config.services.openclaw.execPath} gateway start --foreground";
+        User             = "openclaw";
+        Group            = "openclaw";
+        WorkingDirectory = "/var/lib/openclaw";
+        ExecStart        = "${pkgs.nodejs_22}/bin/node ${config.services.openclaw.execPath}  gateway start --foreground";
         Restart          = "on-failure";
         RestartSec       = "30s";
-        WorkingDirectory = "/root";
         StandardOutput   = "journal";
         StandardError    = "journal";
         SyslogIdentifier = "openclaw-gateway";
