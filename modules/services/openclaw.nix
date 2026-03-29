@@ -339,6 +339,7 @@ Add SSH hosts, device names, and other setup-specific notes here."
     # ── Systemd service ──────────────────────────────────────────────────────
     systemd.services.openclaw-gateway = {
       description = "OpenClaw Gateway"; after = [ "network.target" ]; wantedBy = [ "multi-user.target" ];
+      restartTriggers = [ (builtins.toJSON baseConfig) ];
       environment = { HOME = "/var/lib/openclaw"; NODE_ENV = "production"; OPENCLAW_WORKSPACE = cfg.workDir; NPM_CONFIG_PREFIX = "/var/lib/openclaw/.npm-global"; };
       serviceConfig = {
         Type = "simple"; User = "openclaw"; Group = "openclaw"; WorkingDirectory = "/var/lib/openclaw";

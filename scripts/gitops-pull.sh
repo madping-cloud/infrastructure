@@ -140,6 +140,8 @@ for CONTAINER in $CONTAINERS; do
   # pipefail (line 4) propagates nixos-rebuild failure through the pipe to logger
   if incus exec "$CONTAINER" -- nixos-rebuild switch --flake "/etc/nixos#$CONTAINER" 2>&1 | logger -t "$LOG_TAG[$CONTAINER]"; then
     incus exec "$CONTAINER" -- bash -c 'ln -sfn $(readlink -f /nix/var/nix/profiles/system) /run/current-system' 2>/dev/null || true
+    # Restart openclaw-gateway to pick up new env/config from activation scripts
+    incus exec "$CONTAINER" -- systemctl restart openclaw-gateway 2>/dev/null || true
     log INFO deploy_ok "Deploy succeeded" container="$CONTAINER" commit="${NEW_COMMIT:0:8}"
     ((SUCCEEDED+=1))
   else

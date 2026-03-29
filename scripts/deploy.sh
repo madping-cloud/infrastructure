@@ -75,6 +75,12 @@ deploy_container() {
     # Safety: ensure /run/current-system points to the correct store path
     incus exec "$CONTAINER" -- bash -c 'ln -sfn $(readlink -f /nix/var/nix/profiles/system) /run/current-system'
 
+    # Restart openclaw-gateway to pick up new env/config from activation scripts
+    if incus exec "$CONTAINER" -- systemctl is-active openclaw-gateway &>/dev/null; then
+      echo "==> Restarting openclaw-gateway..."
+      incus exec "$CONTAINER" -- systemctl restart openclaw-gateway
+    fi
+
     echo "==> Deploy complete: $CONTAINER"
     incus exec "$CONTAINER" -- nixos-version
   fi
