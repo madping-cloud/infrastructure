@@ -24,7 +24,18 @@
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     primaryModel = "anthropic/claude-sonnet-4-6";
     fallbackModels = [ "anthropic/claude-opus-4-6" "anthropic/claude-haiku-4-5" "google/gemini-2.5-flash" "google/imagen-4" ];
-    availableModels = [ "google/gemini-2.5-flash" "google/imagen-4" "anthropic/claude-opus-4-6" "anthropic/claude-sonnet-4-6" "anthropic/claude-haiku-4-5" "x-ai/grok-4.1-fast" "x-ai/grok-4.20-multi-agent-beta" ];
+    availableModels = [
+      "google/gemini-2.5-flash"
+      "google/imagen-4"
+      "anthropic/claude-opus-4-6"
+      "anthropic/claude-sonnet-4-6"
+      "anthropic/claude-haiku-4-5"
+      "x-ai/grok-4.20-0309-reasoning"
+      "x-ai/grok-4.20-0309-non-reasoning"
+      "x-ai/grok-4.20-multi-agent-0309"
+      "x-ai/grok-4-1-fast-reasoning"
+      "x-ai/grok-4-1-fast-non-reasoning"
+    ];
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];
   };
