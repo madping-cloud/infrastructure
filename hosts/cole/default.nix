@@ -19,9 +19,12 @@
   sops.secrets.groq_api_key        = { sopsFile = "/etc/nixos/secrets/${host}/cole.yaml"; key = "groq_api_key"; };
   sops.secrets.openrouter_api_key  = { sopsFile = "/etc/nixos/secrets/${host}/cole.yaml"; key = "openrouter_api_key"; };
   services.openclaw = {
-    enable = true; openFirewall = true; deployPersonalityFiles = true; secretsFile = "/run/openclaw-env";
+    enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     primaryModel = "anthropic/claude-sonnet-4-6";
     fallbackModels = [ "anthropic/claude-opus-4-6" "anthropic/claude-haiku-4-5" "google/gemini-2.5-flash" ];
+    availableModels = [ "google/gemini-2.5-flash" "google/imagen-4" "anthropic/claude-opus-4-6" "anthropic/claude-sonnet-4-6" "anthropic/claude-haiku-4-5" ];
+    discord.enable = true;
+    discord.groupPolicy = "open";
   };
   system.stateVersion = "25.11";
 }

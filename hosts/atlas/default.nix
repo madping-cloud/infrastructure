@@ -18,6 +18,13 @@
   sops.secrets.google_ai_api_key   = { sopsFile = "/etc/nixos/secrets/${host}/atlas.yaml"; key = "google_ai_api_key"; };
   sops.secrets.groq_api_key        = { sopsFile = "/etc/nixos/secrets/${host}/atlas.yaml"; key = "groq_api_key"; };
   sops.secrets.openrouter_api_key  = { sopsFile = "/etc/nixos/secrets/${host}/atlas.yaml"; key = "openrouter_api_key"; };
-  services.openclaw = { enable = true; openFirewall = true; deployPersonalityFiles = true; secretsFile = "/run/openclaw-env"; };
+  services.openclaw = {
+    enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
+    discord.enable = true;
+    discord.allowFrom = [ "166609345080066048" ];
+    discord.threadBindings.enable = true;
+    telegram.enable = true;
+    telegram.allowFrom = [ "5201076941" ];
+  };
   system.stateVersion = "25.11";
 }
