@@ -23,19 +23,37 @@
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     primaryModel = "anthropic/claude-sonnet-4-6";
-    fallbackModels = [ "anthropic/claude-opus-4-6" "anthropic/claude-haiku-4-5" "google/gemini-2.5-flash" "google/imagen-4" ];
-    availableModels = [
+    fallbackModels = [
+      "anthropic/claude-opus-4-6"
+      "anthropic/claude-haiku-4-5"
       "google/gemini-2.5-flash"
       "google/imagen-4"
-      "anthropic/claude-opus-4-6"
-      "anthropic/claude-sonnet-4-6"
+    ];
+    availableModels = [
+      # Anthropic (Claude Code sub — use freely)
       "anthropic/claude-haiku-4-5"
+      # Google
+      "google/gemini-2.5-flash"
+      "google/imagen-4"
+      # xAI
       "x-ai/grok-4.20-0309-reasoning"
       "x-ai/grok-4.20-0309-non-reasoning"
       "x-ai/grok-4.20-multi-agent-0309"
       "x-ai/grok-4-1-fast-reasoning"
       "x-ai/grok-4-1-fast-non-reasoning"
     ];
+    # Models with aliases (used for /model switching and subagent routing)
+    modelAliases = {
+      "anthropic/claude-sonnet-4-6"                        = "sonnet";
+      "anthropic/claude-opus-4-6"                          = "opus";
+      "anthropic/claude-haiku-4-5"                         = "haiku";
+      # OpenRouter — cost-optimized background/subagent models (no China)
+      "openrouter/nvidia/nemotron-3-super-120b-a12b"       = "nemotron-super";  # $0.10/1M — 120B, 262k ctx, tools, background agents (NVIDIA/US)
+      "openrouter/meta-llama/llama-3.3-70b-instruct"       = "llama-70b";       # $0.10/1M — 70B, 131k ctx, tools, reliable background work (Meta/US)
+      "openrouter/mistralai/mistral-small-2603"            = "mistral-small";   # $0.15/1M — 262k ctx, multimodal, creative tasks (Mistral/France)
+      "openrouter/inception/mercury-2"                     = "mercury";         # $0.25/1M — 1000+ tok/s, speed-critical tasks (Inception/US)
+      "openrouter/google/gemini-3.1-flash-lite-preview"    = "gemini-flash-lite"; # $0.25/1M — 1M ctx, full multimodal, long-context analysis (Google/US)
+    };
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];
   };
