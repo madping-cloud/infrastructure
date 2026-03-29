@@ -4,19 +4,24 @@ let
   jqBin = "${pkgs.jq}/bin/jq";
 
   # Build the base openclaw.json from Nix options
-  availableModelsAttr = builtins.listToAttrs (map (m: { name = m; value = {}; }) cfg.availableModels);
+  # Build models attr: plain models get {}, aliased models get {alias = "...";}
+  availableModelsAttr =
+    (builtins.listToAttrs (map (m: { name = m; value = {}; }) cfg.availableModels))
+    // (builtins.mapAttrs (model: alias: { alias = alias; }) cfg.modelAliases);
   baseConfig = {
     meta = {};
     auth = {
       profiles = {
-        "anthropic:default" = { provider = "anthropic"; mode = "api_key"; };
-        "google:default"    = { provider = "google";    mode = "api_key"; };
-        "xai:default"       = { provider = "xai";       mode = "api_key"; };
+        "anthropic:default"   = { provider = "anthropic";   mode = "api_key"; };
+        "google:default"      = { provider = "google";      mode = "api_key"; };
+        "openrouter:default"  = { provider = "openrouter";  mode = "api_key"; };
+        "xai:default"         = { provider = "xai";         mode = "api_key"; };
       };
       order = {
-        anthropic = [ "anthropic:default" ];
-        google    = [ "google:default" ];
-        xai       = [ "xai:default" ];
+        anthropic  = [ "anthropic:default" ];
+        google     = [ "google:default" ];
+        openrouter = [ "openrouter:default" ];
+        xai        = [ "xai:default" ];
       };
     };
     agents.defaults = {
@@ -118,6 +123,11 @@ in
       type = lib.types.attrs;
       default = {};
       description = "Custom model provider definitions merged into models.providers (for non-built-in models like xAI)";
+    };
+    modelAliases = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
+      default = {};
+      description = "Map of model ID to alias string. e.g. { \"anthropic/claude-sonnet-4-6\" = \"sonnet\"; }";
     };
 
     # ── Discord options ────────────────────────────────────────────────────────

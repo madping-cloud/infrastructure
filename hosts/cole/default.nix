@@ -23,19 +23,36 @@
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     primaryModel = "anthropic/claude-sonnet-4-6";
-    fallbackModels = [ "anthropic/claude-opus-4-6" "anthropic/claude-haiku-4-5" "google/gemini-2.5-flash" "google/imagen-4" ];
-    availableModels = [
+    fallbackModels = [
+      "anthropic/claude-opus-4-6"
+      "anthropic/claude-haiku-4-5"
       "google/gemini-2.5-flash"
       "google/imagen-4"
-      "anthropic/claude-opus-4-6"
-      "anthropic/claude-sonnet-4-6"
+    ];
+    availableModels = [
+      # Anthropic (Claude Code sub — use freely)
       "anthropic/claude-haiku-4-5"
+      # Google
+      "google/gemini-2.5-flash"
+      "google/imagen-4"
+      # xAI
       "x-ai/grok-4.20-0309-reasoning"
       "x-ai/grok-4.20-0309-non-reasoning"
       "x-ai/grok-4.20-multi-agent-0309"
       "x-ai/grok-4-1-fast-reasoning"
       "x-ai/grok-4-1-fast-non-reasoning"
     ];
+    # Models with aliases (used for /model switching and subagent routing)
+    modelAliases = {
+      "anthropic/claude-sonnet-4-6"                        = "sonnet";
+      "anthropic/claude-opus-4-6"                          = "opus";
+      "anthropic/claude-haiku-4-5"                         = "haiku";
+      # OpenRouter — cheap/free background models
+      "openrouter/nvidia/nemotron-3-super-120b-a12b:free"  = "nemotron-free";  # $0 — mechanical background work
+      "openrouter/inception/mercury-2"                     = "mercury";        # 1000+ tok/s — fast one-shots
+      "openrouter/mistralai/mistral-small-2603"            = "mistral-small";  # EU, multimodal — creative tasks
+      "openrouter/google/gemini-3.1-flash-lite-preview"    = "gemini-flash-lite"; # 1M ctx — long-context/multimodal
+    };
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];
   };
