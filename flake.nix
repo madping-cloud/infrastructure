@@ -52,10 +52,9 @@
       shellHook = ''
         echo "madping-cloud infrastructure"
         echo "   nixos-rebuild switch --flake .#cole    — rebuild cole"
-        echo "   nixos-rebuild switch --flake .#aurora  — rebuild aurora"
-        if [ -d .git ] && [ ! -L .git/hooks/pre-commit ]; then
+        echo "   nixos-rebuild switch --flake .#atlas   — rebuild atlas"
+        if [ -d .git ]; then
           ln -sf ../../scripts/pre-commit-check.sh .git/hooks/pre-commit
-          echo "   (pre-commit hook installed)"
         fi
       '';
     };

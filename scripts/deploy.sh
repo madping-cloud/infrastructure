@@ -40,12 +40,17 @@ deploy_container() {
     incus exec "$CONTAINER" -- chmod 600 /var/lib/sops-nix/key.txt
   fi
 
-  # Push secrets
+  # Push secrets (only shared + container-specific, not other containers' secrets)
   if [ -d "$WORKSPACE/secrets/$HOSTNAME" ]; then
     echo "==> Pushing secrets..."
     incus exec "$CONTAINER" -- mkdir -p "/etc/nixos/secrets/$HOSTNAME"
-    tar -C "$WORKSPACE/secrets/$HOSTNAME" -cf - . \
-      | incus exec "$CONTAINER" -- tar -C "/etc/nixos/secrets/$HOSTNAME" -xf -
+    local secret_files=()
+    [ -f "$WORKSPACE/secrets/$HOSTNAME/shared.yaml" ] && secret_files+=(shared.yaml)
+    [ -f "$WORKSPACE/secrets/$HOSTNAME/$CONTAINER.yaml" ] && secret_files+=("$CONTAINER.yaml")
+    if [ ${#secret_files[@]} -gt 0 ]; then
+      tar -C "$WORKSPACE/secrets/$HOSTNAME" -cf - "${secret_files[@]}" \
+        | incus exec "$CONTAINER" -- tar -C "/etc/nixos/secrets/$HOSTNAME" -xf -
+    fi
   fi
 
   # Bootstrap prep (idempotent)
@@ -82,7 +87,7 @@ if [[ -n "$DEPLOY_ALL" ]]; then
   echo "==> Deploying all: $(echo "$CONTAINERS" | tr '\n' ' ')"
   FAILURES=0
   for CONTAINER in $CONTAINERS; do
-    deploy_container "$CONTAINER" || { echo "✗ $CONTAINER FAILED"; ((FAILURES++)); }
+    deploy_container "$CONTAINER" || { echo "✗ $CONTAINER FAILED"; ((FAILURES+=1)); }
   done
   [ "$FAILURES" -gt 0 ] && { echo "==> $FAILURES failure(s)"; exit 1; }
   echo "==> All deployed"

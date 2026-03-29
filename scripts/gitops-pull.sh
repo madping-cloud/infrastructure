@@ -6,7 +6,7 @@ set -euo pipefail
 REPO_DIR="/opt/infrastructure"
 HOSTNAME=$(hostname)
 MACHINE_FILE="$REPO_DIR/machines/${HOSTNAME}.yaml"
-LOCK_FILE="/tmp/gitops-pull.lock"
+LOCK_FILE="/var/run/gitops-pull.lock"
 LOG_TAG="gitops-pull"
 SECRETS_FILE="$REPO_DIR/secrets/${HOSTNAME}/shared.yaml"
 
@@ -96,8 +96,13 @@ sync_config() {
 
   if [ -d "$REPO_DIR/secrets/$HOSTNAME" ]; then
     incus exec "$container" -- mkdir -p "$dest/secrets/$HOSTNAME"
-    tar -C "$REPO_DIR/secrets/$HOSTNAME" -cf - . \
-      | incus exec "$container" -- tar -C "$dest/secrets/$HOSTNAME" -xf -
+    local secret_files=()
+    [ -f "$REPO_DIR/secrets/$HOSTNAME/shared.yaml" ] && secret_files+=(shared.yaml)
+    [ -f "$REPO_DIR/secrets/$HOSTNAME/$container.yaml" ] && secret_files+=("$container.yaml")
+    if [ ${#secret_files[@]} -gt 0 ]; then
+      tar -C "$REPO_DIR/secrets/$HOSTNAME" -cf - "${secret_files[@]}" \
+        | incus exec "$container" -- tar -C "$dest/secrets/$HOSTNAME" -xf -
+    fi
   fi
 
   AGE_KEY="/root/.config/sops/age/keys.txt"

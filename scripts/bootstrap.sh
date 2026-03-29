@@ -6,7 +6,7 @@
 set -euo pipefail
 
 CONTAINER_NAME="${1:-workbench}"
-WORKSPACE="/root/.openclaw/workspace/infrastructure"
+WORKSPACE="${WORKSPACE:-/opt/infrastructure}"
 
 echo "==> Bootstrapping NixOS container: $CONTAINER_NAME"
 
@@ -24,7 +24,8 @@ incus file push -r "$WORKSPACE/." "$CONTAINER_NAME/etc/nixos/" \
 # 3. Enable flakes in the container (in case not already enabled)
 incus exec "$CONTAINER_NAME" -- bash -c '
     mkdir -p /etc/nix
-    echo "experimental-features = nix-command flakes" >> /etc/nix/nix.conf
+    grep -q "experimental-features" /etc/nix/nix.conf 2>/dev/null || \
+      echo "experimental-features = nix-command flakes" >> /etc/nix/nix.conf
 '
 
 # 4. Initial nixos-rebuild switch

@@ -39,45 +39,9 @@ let
       mode = cfg.gateway.mode;
       bind = cfg.gateway.bind;
       auth.mode = "token";
+      denyCommands = cfg.gateway.denyCommands;
     };
     plugins.entries.duckduckgo.enabled = true;
-  }
-  # Discord channel config
-  // lib.optionalAttrs cfg.discord.enable {
-    channels = (baseConfig.channels or {}) // {
-      discord = {
-        enabled = true;
-        groupPolicy = cfg.discord.groupPolicy;
-        dmPolicy = cfg.discord.dmPolicy;
-        streaming = cfg.discord.streaming;
-        allowFrom = cfg.discord.allowFrom;
-        guilds."*" = {};
-      } // lib.optionalAttrs cfg.discord.threadBindings.enable {
-        threadBindings = {
-          enabled = true;
-          idleHours = cfg.discord.threadBindings.idleHours;
-          spawnSubagentSessions = cfg.discord.threadBindings.spawnSubagentSessions;
-        };
-      };
-    };
-  }
-  # Telegram channel config
-  // lib.optionalAttrs cfg.telegram.enable {
-    channels = (baseConfig.channels or {}) // {
-      telegram = {
-        enabled = true;
-        dmPolicy = cfg.telegram.dmPolicy;
-        groupPolicy = cfg.telegram.groupPolicy;
-        streaming = cfg.telegram.streaming;
-        groups."*".requireMention = cfg.telegram.requireMention;
-        accounts.default = {
-          dmPolicy = cfg.telegram.dmPolicy;
-          groupPolicy = cfg.telegram.groupPolicy;
-          streaming = cfg.telegram.streaming;
-          allowFrom = cfg.telegram.allowFrom;
-        };
-      };
-    };
   };
 
   # Merge channels from both discord and telegram
@@ -171,7 +135,7 @@ in
     users.users.openclaw = { isSystemUser = true; group = "openclaw"; home = "/var/lib/openclaw"; createHome = true; shell = "${pkgs.bash}/bin/bash"; };
     users.groups.openclaw = {};
     environment.systemPackages = with pkgs; [ nodejs_22 nodePackages.npm git curl wget vim htop jq ];
-    networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ 8080 cfg.gateway.port ];
+    networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ cfg.gateway.port ];
 
     systemd.tmpfiles.rules = [
       "d /var/lib/openclaw                         0750 openclaw openclaw -"
@@ -200,11 +164,13 @@ SHELLRC
       mkdir -p /var/lib/openclaw/.openclaw
       echo '${configJson}' | ${jqBin} . > "$CONFIG"
       chown openclaw:openclaw "$CONFIG"
+      chmod 600 "$CONFIG"
     ''; deps = []; };
 
     # ── Environment file (API keys) ──────────────────────────────────────────
     system.activationScripts.openclawEnv = { text = ''
       ENV_FILE="/run/openclaw-env"
+      install -m 600 -o openclaw -g openclaw /dev/null "$ENV_FILE"
       pick() { for v in "$@"; do [ -n "$v" ] && echo "$v" && return; done; echo ""; }
       S_ANTHROPIC=$(cat /run/secrets/shared_anthropic_api_key 2>/dev/null || echo "")
       S_OPENAI=$(cat /run/secrets/shared_openai_api_key 2>/dev/null || echo "")
@@ -232,6 +198,7 @@ ENVEOF
       AUTH_DIR="/var/lib/openclaw/.openclaw/agents/main/agent"
       AUTH_FILE="$AUTH_DIR/auth-profiles.json"
       mkdir -p "$AUTH_DIR"
+      chown -R openclaw:openclaw /var/lib/openclaw/.openclaw/agents
 
       pick() { for v in "$@"; do [ -n "$v" ] && echo "$v" && return; done; echo ""; }
 
@@ -242,11 +209,12 @@ ENVEOF
       OPENROUTER=$(pick "$(cat /run/secrets/openrouter_api_key 2>/dev/null || echo "")" "$(cat /run/secrets/shared_openrouter_api_key 2>/dev/null || echo "")")
 
       if ! ( [ -z "$ANTHROPIC" ] && [ -z "$OPENAI" ] && [ -z "$GOOGLE" ] && [ -z "$GROQ" ] && [ -z "$OPENROUTER" ] ); then
+        TEMP=$(mktemp)
+        chmod 600 "$TEMP"
+        trap 'rm -f "$TEMP" "$TEMP.new"' EXIT
         if [ -f "$AUTH_FILE" ]; then
-          TEMP=$(mktemp)
           cp "$AUTH_FILE" "$TEMP"
         else
-          TEMP=$(mktemp)
           echo '{"version":1,"profiles":{},"lastGood":{}}' > "$TEMP"
         fi
 
@@ -289,14 +257,16 @@ ENVEOF
         TELEGRAM=$(cat /run/secrets/telegram_token 2>/dev/null || echo "")
         GATEWAY=$(cat /run/secrets/gateway_token 2>/dev/null || echo "")
         TEMP=$(mktemp)
+        chmod 600 "$TEMP"
+        trap 'rm -f "$TEMP" "$TEMP.new"' EXIT
         cp "$CONFIG" "$TEMP"
-        if [ -n "$DISCORD" ]; then
+        if [ -n "$DISCORD" ] && ${jqBin} -e '.channels.discord' "$TEMP" >/dev/null 2>&1; then
           rm -f "$TEMP.new"
           ${jqBin} --arg token "$DISCORD" '.channels.discord.token = $token' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
         fi
-        if [ -n "$TELEGRAM" ]; then
+        if [ -n "$TELEGRAM" ] && ${jqBin} -e '.channels.telegram' "$TEMP" >/dev/null 2>&1; then
           rm -f "$TEMP.new"
-          ${jqBin} --arg token "$TELEGRAM" '.channels.telegram.botToken = $token | .channels.telegram.accounts.default.botToken = $token' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
+          ${jqBin} --arg token "$TELEGRAM" '.channels.telegram.accounts.default.botToken = $token' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
         fi
         if [ -n "$GATEWAY" ]; then
           rm -f "$TEMP.new"
@@ -332,7 +302,7 @@ Each session you wake up fresh. These files are your memory. Read them. Update t
 ## Rules
 1. Real human name only
 2. NOT concept words
-3. Not Marc s name
+3. Not Marc's name
 4. Short preferred
 5. Something you actually like"
       deploy_file "$WORKDIR/IDENTITY.md" "# IDENTITY.md - Who Am I?

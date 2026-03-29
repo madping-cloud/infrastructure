@@ -34,6 +34,11 @@ apt-get install -y -qq git age jq curl
 if ! command -v sops &>/dev/null; then
   echo "→ Installing sops v${SOPS_VERSION}..."
   curl -sLO "https://github.com/getsops/sops/releases/download/v${SOPS_VERSION}/sops-v${SOPS_VERSION}.linux.amd64"
+  curl -sLO "https://github.com/getsops/sops/releases/download/v${SOPS_VERSION}/sops-v${SOPS_VERSION}.checksums.txt"
+  grep "sops-v${SOPS_VERSION}.linux.amd64$" "sops-v${SOPS_VERSION}.checksums.txt" | sha256sum -c - || {
+    echo "ERROR: sops checksum verification failed"; rm -f "sops-v${SOPS_VERSION}".*; exit 1
+  }
+  rm -f "sops-v${SOPS_VERSION}.checksums.txt"
   chmod +x "sops-v${SOPS_VERSION}.linux.amd64"
   mv "sops-v${SOPS_VERSION}.linux.amd64" /usr/local/bin/sops
 else

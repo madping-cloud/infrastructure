@@ -42,7 +42,6 @@ echo "==> Creating container: $CONTAINER_NAME on $HOSTNAME"
 echo "==> Setting up hosts/$CONTAINER_NAME/..."
 cp -r hosts/_template "hosts/$CONTAINER_NAME"
 sed -i "s/CHANGE_ME/$CONTAINER_NAME/g" "hosts/$CONTAINER_NAME/default.nix"
-sed -i '/assertions/d' "hosts/$CONTAINER_NAME/default.nix"
 
 # ── Step 2: Add to flake.nix (inside nixosConfigurations block) ──────────────
 echo "==> Adding to flake.nix..."
@@ -146,4 +145,4 @@ echo ""
 echo "==> Done! Container $CONTAINER_NAME is running."
 echo "    IP: $(incus list "$CONTAINER_NAME" -f csv -c 4 | cut -d' ' -f1)"
 echo "    To add real secrets: cd $REPO_DIR && sops $SECRETS_FILE"
-echo "    To commit: git add -A && git commit -m 'feat: add $CONTAINER_NAME'"
+echo "    To commit: git add hosts/$CONTAINER_NAME flake.nix $MACHINE_FILE $SECRETS_FILE && git commit -m 'feat: add $CONTAINER_NAME'"
