@@ -116,7 +116,7 @@ for CONTAINER in $CONTAINERS; do
 
   if ! incus exec "$CONTAINER" -- true 2>/dev/null; then
     log WARN deploy_skip "Container not running" container="$CONTAINER"
-    ((SKIPPED++))
+    ((SKIPPED+=1))
     continue
   fi
 
@@ -136,11 +136,11 @@ for CONTAINER in $CONTAINERS; do
   if incus exec "$CONTAINER" -- nixos-rebuild switch --flake "/etc/nixos#$CONTAINER" 2>&1 | logger -t "$LOG_TAG[$CONTAINER]"; then
     incus exec "$CONTAINER" -- bash -c 'ln -sfn $(readlink -f /nix/var/nix/profiles/system) /run/current-system' 2>/dev/null || true
     log INFO deploy_ok "Deploy succeeded" container="$CONTAINER" commit="${NEW_COMMIT:0:8}"
-    ((SUCCEEDED++))
+    ((SUCCEEDED+=1))
   else
     log ERROR deploy_fail "Deploy failed" container="$CONTAINER" commit="${NEW_COMMIT:0:8}"
     discord_alert "⚠️ **Deploy failed:** \`$CONTAINER\` on \`$HOSTNAME\` (${NEW_COMMIT:0:8})"
-    ((FAILURES++))
+    ((FAILURES+=1))
   fi
 done
 
