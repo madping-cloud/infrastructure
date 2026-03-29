@@ -22,8 +22,8 @@
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     userName = "Connie";
-    primaryModel = "google/gemini-2.5-flash";
-    fallbackModels = [ "google/gemini-2.5-flash-lite" "google/imagen-4" ];
+    primaryModel = "openrouter/deepseek/deepseek-v3.2";
+    fallbackModels = [ "google/gemini-2.5-flash" "google/gemini-2.5-flash-lite" "google/imagen-4" ];
     availableModels = [
       # Google (direct — default voice, warm and conversational)
       "google/gemini-2.5-flash"
