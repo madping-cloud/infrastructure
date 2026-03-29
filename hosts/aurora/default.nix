@@ -39,6 +39,7 @@
       "openrouter/qwen/qwen3-235b-a22b-thinking-2507"    = "qwen-think";        # $0.15/$1.50 — Deep reasoning. Use sparingly (output is pricey).
       "openrouter/mistralai/mistral-small-2603"          = "mistral-small";     # $0.15/1M — creative writing, narrative, storytelling (French sensibility)
     };
+    toolsAllow = [ "cron" ];  # Allow Aurora to manage her own cron jobs
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];
     telegram.enable = true;

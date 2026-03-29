@@ -38,6 +38,8 @@ let
     tools.web = {
       search = { enabled = true; provider = "duckduckgo"; };
       fetch.enabled = true;
+    } // lib.optionalAttrs (cfg.toolsAllow != []) {
+      allow = cfg.toolsAllow;
     };
     messages = {
       ackReactionScope = "group-mentions";
@@ -128,6 +130,11 @@ in
       type = lib.types.attrsOf lib.types.str;
       default = {};
       description = "Map of model ID to alias string. e.g. { \"anthropic/claude-sonnet-4-6\" = \"sonnet\"; }";
+    };
+    toolsAllow = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [];
+      description = "Extra tools to allow beyond defaults. e.g. [ \"cron\" ] to allow the agent to manage cron jobs.";
     };
 
     # ── Discord options ────────────────────────────────────────────────────────
