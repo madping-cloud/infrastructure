@@ -35,12 +35,12 @@ let
       maxConcurrent = 4;
       subagents.maxConcurrent = 8;
     };
-    tools.web = {
-      search = { enabled = true; provider = "duckduckgo"; };
-      fetch.enabled = true;
-    } // lib.optionalAttrs (cfg.toolsAllow != []) {
-      allow = cfg.toolsAllow;
-    };
+    tools = {
+      web = {
+        search = { enabled = true; provider = "duckduckgo"; };
+        fetch.enabled = true;
+      };
+    } // (if cfg.toolsAllow != [] then { allow = cfg.toolsAllow; } else {});
     messages = {
       ackReactionScope = "group-mentions";
       queue.mode = cfg.messages.queueMode;
