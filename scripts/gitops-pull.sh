@@ -8,7 +8,7 @@ HOSTNAME=$(hostname)
 MACHINE_FILE="$REPO_DIR/machines/${HOSTNAME}.yaml"
 LOCK_FILE="/tmp/gitops-pull.lock"
 LOG_TAG="gitops-pull"
-DISCORD_WEBHOOK="https://discord.com/api/webhooks/1487608243441369169/uS1jEFrouMtiL3O7JLallmV5XfMZzvAsKtXcWaScL9zXaRcz_Df599l1nPUDxH7EFRuq"
+SECRETS_FILE="$REPO_DIR/secrets/${HOSTNAME}/shared.yaml"
 
 # Structured logging: level=INFO|WARN|ERROR action= msg= key=value ...
 log() {
@@ -19,10 +19,14 @@ log() {
 }
 
 discord_alert() {
-  local msg="$1"
+  local webhook
+  webhook=$(sops -d --extract '["discord_webhook"]' "$SECRETS_FILE" 2>/dev/null) || return 0
+  [ -z "$webhook" ] && return 0
+  local payload
+  payload=$(printf '%s' "$1" | jq -Rs '{content: .}') || return 0
   curl -sf -H "Content-Type: application/json" \
-    -d "{\"content\":\"$msg\"}" \
-    "$DISCORD_WEBHOOK" >/dev/null 2>&1 || true
+    -d "$payload" \
+    "$webhook" >/dev/null 2>&1 || true
 }
 
 # ── Lock ──────────────────────────────────────────────────────────────────────
@@ -64,7 +68,7 @@ if [ -z "$CONTAINERS" ]; then
   exit 0
 fi
 
-log INFO deploy_start "Beginning deployment" containers="$CONTAINER_COUNT" targets="$(echo $CONTAINERS | tr ' ' ',')"
+log INFO deploy_start "Beginning deployment" containers="$CONTAINER_COUNT" targets="$(echo "$CONTAINERS" | tr '\n' ',')"
 
 # ── Sync helper ───────────────────────────────────────────────────────────────
 sync_config() {

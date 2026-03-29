@@ -27,7 +27,7 @@ deploy_container() {
   incus exec "$CONTAINER" -- mkdir -p /etc/nixos
   tar -C "$WORKSPACE" \
     --exclude='.git' --exclude='secrets' --exclude='scripts' --exclude='systemd' \
-    --exclude='docs' --exclude='machines' --exclude='deploy' --exclude='*.sh' \
+    --exclude='docs' --exclude='machines' --exclude='*.sh' \
     -cf - flake.nix flake.lock hosts modules lib .sops.yaml 2>/dev/null \
     | incus exec "$CONTAINER" -- tar -C /etc/nixos -xf -
 
@@ -79,7 +79,7 @@ if [[ -n "$DEPLOY_ALL" ]]; then
   [ -f "$MACHINE_FILE" ] || { echo "ERROR: No machine file at $MACHINE_FILE"; exit 1; }
   CONTAINERS=$(grep -oP '^\s+- name:\s+\K\S+' "$MACHINE_FILE" || true)
   [ -z "$CONTAINERS" ] && { echo "No containers for $HOSTNAME"; exit 0; }
-  echo "==> Deploying all: $(echo $CONTAINERS | tr '\n' ' ')"
+  echo "==> Deploying all: $(echo "$CONTAINERS" | tr '\n' ' ')"
   FAILURES=0
   for CONTAINER in $CONTAINERS; do
     deploy_container "$CONTAINER" || { echo "✗ $CONTAINER FAILED"; ((FAILURES++)); }

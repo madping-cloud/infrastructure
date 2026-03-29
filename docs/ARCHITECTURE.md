@@ -5,7 +5,7 @@
 Pull-based GitOps on Debian hosts running Incus containers.
 NixOS runs **inside** containers — the Debian hosts use nix as a package manager only.
 
-Each host runs a systemd timer that pulls the repo every 5 minutes and deploys any containers
+Each host runs a systemd timer that pulls the repo every 1 minute and deploys any containers
 defined in `machines/<hostname>.yaml` if there are new commits.
 
 ## Stack
@@ -13,7 +13,7 @@ defined in `machines/<hostname>.yaml` if there are new commits.
 ```
 GitHub (madping-cloud/infrastructure)
         │
-        │  git pull (systemd timer, every 5 minutes)
+        │  git pull (systemd timer, every 1 minute)
         ▼
 ┌───────────────────┐     ┌───────────────────────────────┐
 │  Thor             │     │  Loki (ZimaBoard)             │
@@ -24,7 +24,7 @@ GitHub (madping-cloud/infrastructure)
 │  /opt/infra       │     │  /opt/infra                   │
 │                   │     │                               │
 │  Incus containers:│     │  Incus containers:            │
-│  ├── silas        │     │  └── (future agents)          │
+│  ├── cole         │     │  └── (future agents)          │
 │  ├── aurora       │     │                               │
 │  └── atlas        │     │                               │
 └───────────────────┘     └───────────────────────────────┘
@@ -36,20 +36,23 @@ GitHub (madping-cloud/infrastructure)
 1. Developer pushes to master
         │
         ▼
-2. gitops-pull.timer fires on each host (every 5 min)
+2. gitops-pull.timer fires on each host (every 1 min)
         │
         ▼
 3. gitops-pull.sh runs:
-   a. git fetch + reset --hard origin/master
+   a. git fetch + merge --ff-only origin/master
    b. Compare OLD_COMMIT vs NEW_COMMIT
    c. If no change → exit (skip deploy)
    d. If changed → read machines/<hostname>.yaml
    e. For each container:
-      - incus file push (sync flake)
-      - incus exec nixos-rebuild switch --flake /etc/nixos#<container>
+      - Sync flake + secrets via tar pipe
+      - Push age key for sops-nix decryption
+      - nixos-rebuild switch --flake /etc/nixos#<container>
+   f. On failure → Discord webhook alert
         │
         ▼
-4. Logs to systemd journal (journalctl -u gitops-pull)
+4. Structured logs to systemd journal (journalctl -u gitops-pull)
+   Format: level= action= host= msg= key=value
 ```
 
 ## Directory Structure
@@ -65,38 +68,37 @@ infrastructure/
 │
 ├── modules/
 │   ├── common/
-│   │   └── default.nix          # Shared: locale, SSH, nix settings, firewall
+│   │   └── default.nix          # Shared: locale, firewall, nix settings, kernel hardening
 │   └── services/
 │       └── openclaw.nix         # OpenClaw systemd service module
 │
 ├── hosts/
 │   ├── _template/
 │   │   └── default.nix          # Template for new agent containers
-│   ├── silas/default.nix
-│   ├── aurora/default.nix
-│   └── atlas/default.nix
+│   ├── cole/default.nix         # Cole — infrastructure agent
+│   ├── aurora/default.nix       # Aurora — companion agent
+│   └── atlas/default.nix        # Atlas — primary assistant
 │
 ├── lib/
-│   └── default.nix              # Shared helpers: mkAgent, mkContainer
+│   └── default.nix              # Shared helpers: mkAgent
 │
 ├── secrets/
 │   ├── .gitignore               # Prevents committing raw secrets
-│   ├── thor/secrets.yaml        # sops-encrypted secrets for Thor containers
-│   └── loki/secrets.yaml        # sops-encrypted secrets for Loki containers
+│   └── thor/
+│       ├── shared.yaml          # Shared API keys (Anthropic, OpenAI, etc.)
+│       ├── cole.yaml            # Cole-specific tokens
+│       ├── aurora.yaml          # Aurora-specific tokens
+│       └── atlas.yaml           # Atlas-specific tokens
 │
 ├── systemd/
 │   ├── gitops-pull.service      # Systemd service unit (installed on Debian hosts)
-│   └── gitops-pull.timer        # Systemd timer unit (fires every 5 minutes)
+│   └── gitops-pull.timer        # Systemd timer unit (fires every 1 minute)
 │
 ├── scripts/
 │   ├── deploy.sh                # Manual deploy via incus exec (run from host)
 │   ├── gitops-pull.sh           # Pull-and-deploy (called by systemd timer)
-│   └── bootstrap-host.sh        # One-time host setup script
-│
-├── deploy/
-│   ├── colmena.nix              # Colmena deployment config (SSH-based)
-│   └── scripts/
-│       └── deploy.sh            # Remote deploy via nixos-rebuild --target-host
+│   ├── bootstrap-host.sh        # One-time host setup script
+│   └── add-container.sh         # Automated container creation helper
 │
 └── docs/
     └── ARCHITECTURE.md          # This file
@@ -121,21 +123,27 @@ What it does:
 
 ### Adding a New Container
 
-1. Copy `hosts/_template/` → `hosts/<name>/`
-2. Set `hostName` in the new config
-3. Add `nixosConfigurations.<name>` entry to `flake.nix`
-4. Add to `machines/<host>.yaml` container list
-5. `incus launch images:nixos/25.11 <name>` on the host
-6. First deploy: `./scripts/deploy.sh <name>`
+```bash
+# Automated (recommended):
+./scripts/add-container.sh <name>
+
+# Manual:
+1. Copy hosts/_template/ → hosts/<name>/
+2. Set hostName in the new config
+3. Add nixosConfigurations.<name> entry to flake.nix
+4. Add to machines/<host>.yaml container list
+5. incus launch images:nixos/25.11 <name> on the host
+6. First deploy: ./scripts/deploy.sh <name>
 7. All future deploys: automatic via timer
+```
 
 ### Day-to-Day Changes
 
 ```bash
 # Edit config
-vim hosts/silas/default.nix
+vim hosts/cole/default.nix
 
-# Push — hosts deploy automatically within 5 minutes
+# Push — hosts deploy automatically within 1 minute
 git add -A && git commit -m "feat: ..."
 git push
 ```
@@ -154,14 +162,6 @@ systemctl status gitops-pull.timer
 journalctl -u gitops-pull -f
 ```
 
-### Deploy Scripts — Which to Use?
-
-| Script | Run From | Method |
-|--------|----------|--------|
-| `scripts/deploy.sh` | Debian host directly | `incus exec` (local, no SSH) |
-| `deploy/scripts/deploy.sh` | Anywhere with SSH | `nixos-rebuild --target-host` |
-| `scripts/gitops-pull.sh` | Called by systemd timer | Automated, runs on commit |
-
 ## Secrets Management
 
 Secrets use [sops-nix](https://github.com/Mic92/sops-nix) with age encryption.
@@ -173,27 +173,26 @@ Public keys are registered in `.sops.yaml`.
 age-keygen -o /root/.config/sops/age/keys.txt
 
 # Edit secrets (auto-decrypts, re-encrypts on save)
-sops secrets/thor/secrets.yaml
+sops secrets/thor/shared.yaml
 
 # Decrypt to verify
-sops --decrypt secrets/thor/secrets.yaml
+sops --decrypt secrets/thor/shared.yaml
 ```
 
 ## Network
 
-| Host  | IP         | Role                          |
-|-------|------------|-------------------------------|
-| thor  | 10.100.0.1 | Incus bridge gateway          |
-| loki  | TBD        | ZimaBoard, future Incus host  |
-| silas | TBD        | NixOS container (agent)       |
-| aurora| TBD        | NixOS container (agent)       |
-| atlas | TBD        | NixOS container (agent)       |
+| Host   | IP         | Role                          |
+|--------|------------|-------------------------------|
+| thor   | 10.100.0.1 | Incus bridge gateway          |
+| loki   | TBD        | ZimaBoard, future Incus host  |
+| cole   | DHCP       | NixOS container (agent)       |
+| aurora | DHCP       | NixOS container (agent)       |
+| atlas  | DHCP       | NixOS container (agent)       |
 
 ## Roadmap
 
-- [ ] Wire up sops-nix for secrets in containers
-- [ ] Configure container IPs and update network table
+- [x] Wire up sops-nix for secrets in containers
+- [x] Add failure alerting (Discord webhook on deploy failure)
+- [ ] Configure static container IPs and update network table
 - [ ] Set up loki when ZimaBoard is provisioned
-- [ ] Add failure alerting (notify Discord on deploy failure)
 - [ ] Container snapshot strategy for backups
-- [ ] Fill in `deploy/colmena.nix` with real IPs for SSH-based deploys
