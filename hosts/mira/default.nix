@@ -19,10 +19,18 @@
   sops.secrets.google_ai_api_key   = { sopsFile = "/etc/nixos/secrets/${host}/mira.yaml"; key = "google_ai_api_key"; };
   sops.secrets.groq_api_key        = { sopsFile = "/etc/nixos/secrets/${host}/mira.yaml"; key = "groq_api_key"; };
   sops.secrets.openrouter_api_key  = { sopsFile = "/etc/nixos/secrets/${host}/mira.yaml"; key = "openrouter_api_key"; };
+  sops.secrets.xai_api_key         = { sopsFile = "/etc/nixos/secrets/${host}/mira.yaml"; key = "xai_api_key"; };
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     userName = "Marc";
-    availableModels = [ "google/gemini-2.5-flash" "google/imagen-4" ];
+    primaryModel = "x-ai/grok-4";
+    availableModels = [
+      "google/gemini-2.5-flash"
+      "google/imagen-4"
+      "x-ai/grok-4.20-0309-reasoning"
+      "x-ai/grok-4-1-fast"
+      "x-ai/grok-4.20-0309-non-reasoning"
+    ];
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];
   };
