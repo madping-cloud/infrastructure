@@ -9,6 +9,8 @@
     deployPersonalityFiles = lib.mkOption { type = lib.types.bool; default = true; };
     userName = lib.mkOption { type = lib.types.str; default = "Marc"; description = "Human user name for personality files"; };
     version = lib.mkOption { type = lib.types.str; default = "latest"; description = "OpenClaw npm version to install (e.g. '1.2.3' or 'latest')"; };
+    primaryModel = lib.mkOption { type = lib.types.str; default = "google/gemini-2.5-flash"; description = "Primary AI model for this agent"; };
+    fallbackModels = lib.mkOption { type = lib.types.listOf lib.types.str; default = []; description = "Fallback models (empty = no fallbacks)"; };
   };
 
   config = lib.mkIf config.services.openclaw.enable {
@@ -37,13 +39,20 @@ SHELLRC
       done
     ''; deps = []; };
 
-    system.activationScripts.openclawConfig = { text = ''
+    system.activationScripts.openclawConfig = { text = let
+      jq = "${pkgs.jq}/bin/jq";
+      primary = config.services.openclaw.primaryModel;
+      fallbacks = builtins.toJSON config.services.openclaw.fallbackModels;
+    in ''
       CONFIG="/var/lib/openclaw/.openclaw/openclaw.json"
       if [ ! -f "$CONFIG" ]; then
         mkdir -p /var/lib/openclaw/.openclaw
         cat > "$CONFIG" << 'CONFIGJSON'
-{"meta":{},"auth":{"profiles":{"anthropic:default":{"provider":"anthropic","mode":"api_key"},"google:default":{"provider":"google","mode":"api_key"}},"order":{"anthropic":["anthropic:default"],"google":["google:default"]}},"agents":{"defaults":{"model":{"primary":"anthropic/claude-sonnet-4-6","fallbacks":["anthropic/claude-opus-4-6","anthropic/claude-haiku-4-5","google/gemini-2.5-flash"]},"models":{"anthropic/claude-opus-4-6":{},"anthropic/claude-sonnet-4-6":{},"anthropic/claude-haiku-4-5":{},"google/gemini-2.5-flash":{},"google/imagen-4":{}},"workspace":"/var/lib/openclaw/workspace","compaction":{"mode":"safeguard"},"maxConcurrent":4,"subagents":{"maxConcurrent":8}}},"tools":{"web":{"search":{"enabled":true,"provider":"duckduckgo"},"fetch":{"enabled":true}}},"messages":{"ackReactionScope":"group-mentions"},"commands":{"native":"auto","nativeSkills":"auto","restart":true},"gateway":{"port":18789,"mode":"local","bind":"loopback","auth":{"mode":"token"}},"plugins":{"entries":{"duckduckgo":{"enabled":true}}}}
+{"meta":{},"auth":{"profiles":{"anthropic:default":{"provider":"anthropic","mode":"api_key"},"google:default":{"provider":"google","mode":"api_key"}},"order":{"anthropic":["anthropic:default"],"google":["google:default"]}},"agents":{"defaults":{"model":{"primary":"google/gemini-2.5-flash","fallbacks":[]},"models":{"anthropic/claude-opus-4-6":{},"anthropic/claude-sonnet-4-6":{},"anthropic/claude-haiku-4-5":{},"google/gemini-2.5-flash":{},"google/imagen-4":{}},"workspace":"/var/lib/openclaw/workspace","compaction":{"mode":"safeguard"},"maxConcurrent":4,"subagents":{"maxConcurrent":8}}},"tools":{"web":{"search":{"enabled":true,"provider":"duckduckgo"},"fetch":{"enabled":true}}},"messages":{"ackReactionScope":"group-mentions"},"commands":{"native":"auto","nativeSkills":"auto","restart":true},"gateway":{"port":18789,"mode":"local","bind":"loopback","auth":{"mode":"token"}},"plugins":{"entries":{"duckduckgo":{"enabled":true}}}}
 CONFIGJSON
+        ${jq} --arg primary '${primary}' --argjson fallbacks '${fallbacks}' \
+          '.agents.defaults.model.primary = $primary | .agents.defaults.model.fallbacks = $fallbacks' \
+          "$CONFIG" > "$CONFIG.tmp" && mv "$CONFIG.tmp" "$CONFIG"
         chown openclaw:openclaw "$CONFIG"
       fi
     ''; deps = []; };
