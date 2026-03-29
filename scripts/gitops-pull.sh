@@ -22,21 +22,25 @@ flock -n 200 || { logger -t "$LOG_TAG" "Already running, skipping"; exit 0; }
 
 cd "$REPO_DIR"
 OLD_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "none")
+logger -t "$LOG_TAG" "Current commit: ${OLD_COMMIT:0:8}"
 
-logger -t "$LOG_TAG" "Pulling latest from origin/master..."
+logger -t "$LOG_TAG" "Fetching origin/master..."
 git fetch origin master --quiet
 
 NEW_COMMIT=$(git rev-parse origin/master)
+logger -t "$LOG_TAG" "Remote commit:  ${NEW_COMMIT:0:8}"
 
 if [ "$OLD_COMMIT" = "$NEW_COMMIT" ]; then
-  logger -t "$LOG_TAG" "No changes (${NEW_COMMIT:0:8}), skipping deploy"
+  logger -t "$LOG_TAG" "No changes, skipping deploy"
   exit 0
 fi
 
-logger -t "$LOG_TAG" "New commits: ${OLD_COMMIT:0:8} -> ${NEW_COMMIT:0:8}"
+logger -t "$LOG_TAG" "New commits detected: ${OLD_COMMIT:0:8} -> ${NEW_COMMIT:0:8}"
 
 # Merge instead of reset --hard so local uncommitted work is preserved
+logger -t "$LOG_TAG" "Merging (ff-only)..."
 git merge --ff-only origin/master --quiet
+logger -t "$LOG_TAG" "Merge complete, now at $(git rev-parse --short HEAD)"
 
 if [ ! -f "$MACHINE_FILE" ]; then
   logger -t "$LOG_TAG" "ERROR: No machine file at $MACHINE_FILE"
@@ -44,11 +48,14 @@ if [ ! -f "$MACHINE_FILE" ]; then
 fi
 
 CONTAINERS=$(grep -oP '^\s+- name:\s+\K\S+' "$MACHINE_FILE" || true)
+CONTAINER_COUNT=$(echo "$CONTAINERS" | wc -w)
 
 if [ -z "$CONTAINERS" ]; then
   logger -t "$LOG_TAG" "No containers defined for $HOSTNAME, nothing to deploy"
   exit 0
 fi
+
+logger -t "$LOG_TAG" "Deploying $CONTAINER_COUNT container(s): $CONTAINERS"
 
 sync_config() {
   local container="$1"
@@ -99,6 +106,7 @@ for CONTAINER in $CONTAINERS; do
   fi
 
   sync_config "$CONTAINER"
+  logger -t "$LOG_TAG" "Building $CONTAINER..."
 
   # Bootstrap prep: idempotent, no-op on already-deployed containers
   incus exec "$CONTAINER" -- bash -c '
