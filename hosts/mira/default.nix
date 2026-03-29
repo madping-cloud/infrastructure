@@ -23,13 +23,14 @@
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     userName = "Marc";
-    primaryModel = "x-ai/grok-4";
+    primaryModel = "x-ai/grok-4.20-0309-reasoning";
     availableModels = [
       "google/gemini-2.5-flash"
       "google/imagen-4"
       "x-ai/grok-4.20-0309-reasoning"
-      "x-ai/grok-4-1-fast"
       "x-ai/grok-4.20-0309-non-reasoning"
+      "x-ai/grok-4-1-fast-reasoning"
+      "x-ai/grok-4-1-fast-non-reasoning"
     ];
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];
