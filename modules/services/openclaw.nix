@@ -69,7 +69,7 @@ let
         streaming = cfg.telegram.streaming;
         groups."*".requireMention = cfg.telegram.requireMention;
         accounts.default = {
-          dmPolicy = cfg.telegram.dmPolicy;
+          dmPolicy = "allowlist";
           groupPolicy = cfg.telegram.groupPolicy;
           streaming = cfg.telegram.streaming;
           allowFrom = cfg.telegram.allowFrom;
@@ -114,7 +114,7 @@ in
 
     # ── Telegram options ───────────────────────────────────────────────────────
     telegram.enable = lib.mkOption { type = lib.types.bool; default = false; };
-    telegram.dmPolicy = lib.mkOption { type = lib.types.str; default = "allowlist"; };
+    telegram.dmPolicy = lib.mkOption { type = lib.types.str; default = "pairing"; };
     telegram.groupPolicy = lib.mkOption { type = lib.types.str; default = "allowlist"; };
     telegram.streaming = lib.mkOption { type = lib.types.str; default = "partial"; };
     telegram.allowFrom = lib.mkOption { type = lib.types.listOf lib.types.str; default = []; };
