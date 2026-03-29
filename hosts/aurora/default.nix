@@ -35,7 +35,7 @@
       "google/gemini-2.5-flash"                          = "gemini-flash";      # Default — warm, multimodal, conversational
       "google/gemini-2.5-flash-lite"                     = "gemini-flash-lite"; # $0.10/1M — 1M ctx, lighter/cheaper Google
       "openrouter/qwen/qwen3.5-flash-02-23"              = "qwen-flash";        # $0.065/1M — 1M ctx, multimodal, tools, reasoning. Cheapest capable worker.
-      "openrouter/qwen/qwen3-235b-a22b-2507"             = "qwen-235b";         # $0.071/$0.10 — 235B params, 262k ctx. Step-up for complex questions.
+      "openrouter/deepseek/deepseek-v3.2"                = "deepseek-v3";       # $0.26/1M — 163k ctx, tools + reasoning. Best quality/value for complex questions.
       "openrouter/qwen/qwen3-235b-a22b-thinking-2507"    = "qwen-think";        # $0.15/$1.50 — Deep reasoning. Use sparingly (output is pricey).
       "openrouter/mistralai/mistral-small-2603"          = "mistral-small";     # $0.15/1M — creative writing, narrative, storytelling (French sensibility)
     };
