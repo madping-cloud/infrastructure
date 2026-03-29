@@ -47,11 +47,12 @@
       "anthropic/claude-sonnet-4-6"                        = "sonnet";
       "anthropic/claude-opus-4-6"                          = "opus";
       "anthropic/claude-haiku-4-5"                         = "haiku";
-      # OpenRouter — cheap/free background models
-      "openrouter/nvidia/nemotron-3-super-120b-a12b:free"  = "nemotron-free";  # $0 — mechanical background work
-      "openrouter/inception/mercury-2"                     = "mercury";        # 1000+ tok/s — fast one-shots
-      "openrouter/mistralai/mistral-small-2603"            = "mistral-small";  # EU, multimodal — creative tasks
-      "openrouter/google/gemini-3.1-flash-lite-preview"    = "gemini-flash-lite"; # 1M ctx — long-context/multimodal
+      # OpenRouter — cost-optimized background/subagent models (no China)
+      "openrouter/nvidia/nemotron-3-super-120b-a12b"       = "nemotron-super";  # $0.10/1M — 120B, 262k ctx, tools, background agents (NVIDIA/US)
+      "openrouter/meta-llama/llama-3.3-70b-instruct"       = "llama-70b";       # $0.10/1M — 70B, 131k ctx, tools, reliable background work (Meta/US)
+      "openrouter/mistralai/mistral-small-2603"            = "mistral-small";   # $0.15/1M — 262k ctx, multimodal, creative tasks (Mistral/France)
+      "openrouter/inception/mercury-2"                     = "mercury";         # $0.25/1M — 1000+ tok/s, speed-critical tasks (Inception/US)
+      "openrouter/google/gemini-3.1-flash-lite-preview"    = "gemini-flash-lite"; # $0.25/1M — 1M ctx, full multimodal, long-context analysis (Google/US)
     };
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];
