@@ -64,7 +64,7 @@ if [ -z "$CONTAINERS" ]; then
   exit 0
 fi
 
-log INFO deploy_start "Beginning deployment" containers="$CONTAINER_COUNT" targets="$CONTAINERS"
+log INFO deploy_start "Beginning deployment" containers="$CONTAINER_COUNT" targets="$(echo $CONTAINERS | tr ' ' ',')"
 
 # ── Sync helper ───────────────────────────────────────────────────────────────
 sync_config() {
@@ -80,7 +80,6 @@ sync_config() {
     --exclude='systemd' \
     --exclude='docs' \
     --exclude='machines' \
-    --exclude='deploy' \
     --exclude='*.sh' \
     -cf - \
     flake.nix flake.lock hosts modules lib .sops.yaml 2>/dev/null \
