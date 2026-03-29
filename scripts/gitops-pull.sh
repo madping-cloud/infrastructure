@@ -8,6 +8,14 @@ HOSTNAME=$(hostname)
 MACHINE_FILE="$REPO_DIR/machines/${HOSTNAME}.yaml"
 LOCK_FILE="/tmp/gitops-pull.lock"
 LOG_TAG="gitops-pull"
+DISCORD_WEBHOOK="https://discord.com/api/webhooks/1487608243441369169/uS1jEFrouMtiL3O7JLallmV5XfMZzvAsKtXcWaScL9zXaRcz_Df599l1nPUDxH7EFRuq"
+
+discord_alert() {
+  local msg="$1"
+  curl -sf -H "Content-Type: application/json" \
+    -d "{\"content\":\"$msg\"}" \
+    "$DISCORD_WEBHOOK" >/dev/null 2>&1 || true
+}
 
 exec 200>"$LOCK_FILE"
 flock -n 200 || { logger -t "$LOG_TAG" "Already running, skipping"; exit 0; }
@@ -99,18 +107,21 @@ for CONTAINER in $CONTAINERS; do
     rm -f /etc/nixos/configuration.nix /etc/nixos/incus.nix
   ' 2>/dev/null || true
 
+  # pipefail (line 4) propagates nixos-rebuild failure through the pipe to logger
   if incus exec "$CONTAINER" -- nixos-rebuild switch --flake "/etc/nixos#$CONTAINER" 2>&1 | logger -t "$LOG_TAG"; then
     # Safety: ensure /run/current-system points to the correct store path
     incus exec "$CONTAINER" -- bash -c 'ln -sfn $(readlink -f /nix/var/nix/profiles/system) /run/current-system' 2>/dev/null || true
     logger -t "$LOG_TAG" "✓ $CONTAINER deployed successfully"
   else
     logger -t "$LOG_TAG" "✗ $CONTAINER deploy FAILED"
+    discord_alert "⚠️ **Deploy failed:** \`$CONTAINER\` on \`$HOSTNAME\` (${NEW_COMMIT:0:8})"
     ((FAILURES++))
   fi
 done
 
 if [ "$FAILURES" -gt 0 ]; then
   logger -t "$LOG_TAG" "Completed with $FAILURES failure(s), $SKIPPED skipped"
+  discord_alert "🔴 **GitOps deploy finished with $FAILURES failure(s)** on \`$HOSTNAME\` (${NEW_COMMIT:0:8})"
   exit 1
 fi
 

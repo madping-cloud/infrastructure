@@ -43,6 +43,12 @@
         hostModule = ./hosts/aurora/default.nix;
       };
 
+
+      # Atlas — primary assistant agent
+      atlas = mkAgent {
+        name       = "atlas";
+        hostModule = ./hosts/atlas/default.nix;
+      };
     };
 
     # ── Dev Shell ─────────────────────────────────────────────────────────────
@@ -53,6 +59,10 @@
         echo "madping-cloud infrastructure"
         echo "   nixos-rebuild switch --flake .#cole    — rebuild cole"
         echo "   nixos-rebuild switch --flake .#aurora  — rebuild aurora"
+        if [ -d .git ] && [ ! -L .git/hooks/pre-commit ]; then
+          ln -sf ../../scripts/pre-commit-check.sh .git/hooks/pre-commit
+          echo "   (pre-commit hook installed)"
+        fi
       '';
     };
 

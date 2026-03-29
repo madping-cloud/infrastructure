@@ -6,7 +6,7 @@ NixOS + Incus GitOps repo for multi-host container infrastructure (Thor + Loki).
 
 This repo uses a **pull-based GitOps** model:
 
-1. Each Debian host (Thor, Loki) runs a `gitops-pull.timer` (every 5 minutes)
+1. Each Debian host (Thor, Loki) runs a `gitops-pull.timer` (every 1 minute)
 2. The timer runs `scripts/gitops-pull.sh`, which pulls `origin/master`
 3. If there are new commits, it deploys each container listed in `machines/<hostname>.yaml`
 4. Deploy: syncs the flake into the container, runs `nixos-rebuild switch` via `incus exec`
@@ -23,7 +23,7 @@ machines/
 hosts/
   _template/
     default.nix            # Template for new containers
-  silas/default.nix        # silas agent container
+  cole/default.nix         # cole agent container
   aurora/default.nix       # aurora agent container
   atlas/default.nix        # atlas agent container
 
@@ -33,23 +33,24 @@ modules/
 
 secrets/
   .gitignore
-  thor/secrets.yaml        # sops-encrypted secrets for Thor containers
-  loki/secrets.yaml        # sops-encrypted secrets for Loki containers
-
-deploy/
-  colmena.nix              # Colmena deployment config
-  scripts/deploy.sh        # Remote deploy via nixos-rebuild --target-host
+  thor/
+    shared.yaml            # sops-encrypted shared API keys for Thor containers
+    cole.yaml              # sops-encrypted cole-specific secrets
+    aurora.yaml            # sops-encrypted aurora-specific secrets
+    atlas.yaml             # sops-encrypted atlas-specific secrets
+  loki/                    # sops-encrypted secrets for Loki containers
 
 scripts/
   deploy.sh                # Manual local deploy via incus exec
   gitops-pull.sh           # Pull-and-deploy (called by systemd timer)
   bootstrap-host.sh        # One-time host setup (nix, timer, clone)
+  add-container.sh         # Automated container creation helper
 
 systemd/
   gitops-pull.service      # Systemd service unit
-  gitops-pull.timer        # Systemd timer unit (every 5 min)
+  gitops-pull.timer        # Systemd timer unit (every 1 min)
 
-lib/default.nix            # Shared Nix helpers (mkSystem, mkContainer)
+lib/default.nix            # Shared Nix helpers (mkAgent)
 flake.nix                  # Flake: all nixosConfigurations + devShell
 .sops.yaml                 # sops key routing config
 ```
@@ -79,29 +80,29 @@ This will:
 
 ```bash
 # 1. Edit NixOS config
-vim hosts/silas/default.nix
+vim hosts/cole/default.nix
 
 # 2. Test build locally (optional)
-nix build .#nixosConfigurations.silas.config.system.build.toplevel
+nix build .#nixosConfigurations.cole.config.system.build.toplevel
 
 # 3. Commit and push
 git add -A && git commit -m "feat: describe change"
 git push
 
-# → Hosts pull within 5 minutes and deploy automatically
+# → Hosts pull within 1 minute and deploy automatically
 ```
 
 ## Manual Deploy
 
 ```bash
 # Deploy a single container (run from the host)
-./scripts/deploy.sh silas
+./scripts/deploy.sh cole
 
 # Deploy all containers for this host
 ./scripts/deploy.sh --all
 
 # Build only (no apply)
-./scripts/deploy.sh silas --build-only
+./scripts/deploy.sh cole --build-only
 
 # Check timer status
 systemctl status gitops-pull.timer
@@ -115,20 +116,26 @@ systemctl start gitops-pull
 
 ## Adding a Container
 
-1. Copy template: `cp -r hosts/_template hosts/<name>`
-2. Set `hostName` in `hosts/<name>/default.nix`
-3. Add `nixosConfigurations` entry in `flake.nix`
-4. Add container to `machines/<host>.yaml`
-5. Launch on the host: `incus launch images:nixos/25.11 <name>`
-6. First deploy: `./scripts/deploy.sh <name>`
-7. Subsequent deploys: automatic via `gitops-pull.timer`
+```bash
+# Automated (recommended):
+./scripts/add-container.sh <name>
+
+# Manual:
+1. Copy template: cp -r hosts/_template hosts/<name>
+2. Set hostName in hosts/<name>/default.nix
+3. Add nixosConfigurations entry in flake.nix
+4. Add container to machines/<host>.yaml
+5. Launch on the host: incus launch images:nixos/25.11 <name>
+6. First deploy: ./scripts/deploy.sh <name>
+7. Subsequent deploys: automatic via gitops-pull.timer
+```
 
 ## Adding a New Host
 
 1. Bootstrap the host: `./scripts/bootstrap-host.sh <hostname>`
 2. Create `machines/<hostname>.yaml` with container list
 3. Generate age key, add public key to `.sops.yaml`
-4. Create `secrets/<hostname>/secrets.yaml` and encrypt it
+4. Create `secrets/<hostname>/shared.yaml` and per-container secrets, encrypt them
 5. Add GitHub deploy key (read-only) to repo settings
 
 ## Secrets Setup
@@ -143,23 +150,23 @@ age-keygen -o /root/.config/sops/age/keys.txt
 # 2. Add the public key to .sops.yaml, commit and push
 
 # 3. Edit and encrypt secrets
-sops secrets/thor/secrets.yaml
+sops secrets/thor/shared.yaml
 
 # 4. Decrypt to verify
-sops --decrypt secrets/thor/secrets.yaml
+sops --decrypt secrets/thor/shared.yaml
 ```
 
 ## Hosts
 
 | Hostname | IP          | Role                    | Status      |
 |----------|-------------|-------------------------|-------------|
-| thor     | 10.100.0.1  | Debian + Incus host     | ✅ Active    |
-| loki     | TBD         | Debian + Incus (ZimaBoard) | 📋 Planned |
+| thor     | 10.100.0.1  | Debian + Incus host     | Active      |
+| loki     | TBD         | Debian + Incus (ZimaBoard) | Planned  |
 
 ## Containers
 
-| Container | Host | Role                  | Status      |
-|-----------|------|-----------------------|-------------|
-| silas     | thor | Executor agent        | ✅ Active    |
-| aurora    | thor | Companion agent       | ✅ Active    |
-| atlas     | thor | Primary assistant     | ✅ Active    |
+| Container | Host | Role                              | Status      |
+|-----------|------|-----------------------------------|-------------|
+| cole      | thor | Infrastructure agent              | Active      |
+| aurora    | thor | Companion agent                   | Active      |
+| atlas     | thor | Primary assistant                 | Active      |

@@ -6,20 +6,21 @@
 #   localLib = import ./lib { inherit nixpkgs sops-nix system; };
 #
 # Then use:
-#   nixosConfigurations.silas = localLib.mkAgent { name = "silas"; hostModule = ./hosts/silas/default.nix; };
+#   nixosConfigurations.cole = localLib.mkAgent { name = "cole"; hostModule = ./hosts/cole/default.nix; };
 
 {
   # Build a NixOS agent container config with common modules applied.
   # Each agent gets: sops-nix, common module, openclaw service module, and its host module.
   #
   # Usage:
-  #   nixosConfigurations.silas = localLib.mkAgent {
-  #     name       = "silas";
-  #     hostModule = ./hosts/silas/default.nix;
+  #   nixosConfigurations.cole = localLib.mkAgent {
+  #     name       = "cole";
+  #     host       = "thor";   # host machine name (used for secret paths)
+  #     hostModule = ./hosts/cole/default.nix;
   #   };
-  mkAgent = { name, hostModule }: nixpkgs.lib.nixosSystem {
+  mkAgent = { name, host ? "thor", hostModule }: nixpkgs.lib.nixosSystem {
     inherit system;
-    specialArgs = { inherit name; inputs = { inherit nixpkgs sops-nix; }; };
+    specialArgs = { inherit name host; inputs = { inherit nixpkgs sops-nix; }; };
     modules = [
       sops-nix.nixosModules.sops
       ../modules/common/default.nix

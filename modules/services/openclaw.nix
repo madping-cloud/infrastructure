@@ -7,6 +7,8 @@
     execPath = lib.mkOption { type = lib.types.str; default = "/var/lib/openclaw/.npm-global/lib/node_modules/openclaw/openclaw.mjs"; };
     openFirewall = lib.mkOption { type = lib.types.bool; default = false; };
     deployPersonalityFiles = lib.mkOption { type = lib.types.bool; default = true; };
+    userName = lib.mkOption { type = lib.types.str; default = "Marc"; description = "Human user name for personality files"; };
+    version = lib.mkOption { type = lib.types.str; default = "latest"; description = "OpenClaw npm version to install (e.g. '1.2.3' or 'latest')"; };
   };
 
   config = lib.mkIf config.services.openclaw.enable {
@@ -68,7 +70,7 @@ OPENROUTER_API_KEY=$(pick "$C_OPENROUTER" "$S_OPENROUTER")
 ENVEOF
       chmod 600 "$ENV_FILE"
       chown openclaw:openclaw "$ENV_FILE"
-    ''; deps = []; };
+    ''; deps = [ "setupSecrets" ]; };
 
     system.activationScripts.openclawAuthPatch = { text = let jq = "${pkgs.jq}/bin/jq"; in ''
       AUTH_DIR="/var/lib/openclaw/.openclaw/agents/main/agent"
@@ -93,18 +95,23 @@ ENVEOF
         fi
 
         if [ -n "$ANTHROPIC" ]; then
+          rm -f "$TEMP.new"
           ${jq} --arg token "$ANTHROPIC" '.profiles["anthropic:default"] = {"type":"token","provider":"anthropic","token":$token} | .lastGood.anthropic = "anthropic:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
         fi
         if [ -n "$OPENAI" ]; then
+          rm -f "$TEMP.new"
           ${jq} --arg token "$OPENAI" '.profiles["openai:default"] = {"type":"token","provider":"openai","token":$token} | .lastGood.openai = "openai:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
         fi
         if [ -n "$GOOGLE" ]; then
+          rm -f "$TEMP.new"
           ${jq} --arg token "$GOOGLE" '.profiles["google:default"] = {"type":"token","provider":"google","token":$token} | .lastGood.google = "google:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
         fi
         if [ -n "$GROQ" ]; then
+          rm -f "$TEMP.new"
           ${jq} --arg token "$GROQ" '.profiles["groq:default"] = {"type":"token","provider":"groq","token":$token} | .lastGood.groq = "groq:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
         fi
         if [ -n "$OPENROUTER" ]; then
+          rm -f "$TEMP.new"
           ${jq} --arg token "$OPENROUTER" '.profiles["openrouter:default"] = {"type":"token","provider":"openrouter","token":$token} | .lastGood.openrouter = "openrouter:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
         fi
 
@@ -116,7 +123,7 @@ ENVEOF
           rm -f "$TEMP" "$TEMP.new"
         fi
       fi
-    ''; deps = [ "openclawConfig" ]; };
+    ''; deps = [ "openclawConfig" "setupSecrets" ]; };
 
     system.activationScripts.openclawChannelPatch = { text = let jq = "${pkgs.jq}/bin/jq"; in ''
       CONFIG="/var/lib/openclaw/.openclaw/openclaw.json"
@@ -142,7 +149,7 @@ ENVEOF
           rm -f "$TEMP" "$TEMP.new"
         fi
       fi
-    ''; deps = [ "openclawConfig" ]; };
+    ''; deps = [ "openclawConfig" "setupSecrets" ]; };
 
     system.activationScripts.openclawPersonality = lib.mkIf config.services.openclaw.deployPersonalityFiles { text = ''
       WORKDIR="${config.services.openclaw.workDir}"
@@ -181,7 +188,7 @@ Each session you wake up fresh. These files are your memory. Read them. Update t
 - Do not exfiltrate private data. Ever.
 - When in doubt, ask."
       deploy_file "$WORKDIR/USER.md" "# USER.md - About Your Human
-- **Name:** Marc
+- **Name:** ${config.services.openclaw.userName}
 - **Timezone:** America/New_York"
       deploy_file "$WORKDIR/TOOLS.md" "# TOOLS.md - Local Notes
 Add SSH hosts, device names, and other setup-specific notes here."
@@ -193,11 +200,11 @@ Add SSH hosts, device names, and other setup-specific notes here."
       serviceConfig = {
         Type = "simple"; User = "openclaw"; Group = "openclaw"; WorkingDirectory = "/var/lib/openclaw";
         Environment = [ "PATH=${pkgs.nodejs_22}/bin:${pkgs.bash}/bin:${pkgs.coreutils}/bin:${pkgs.gnused}/bin:${pkgs.gnugrep}/bin:/run/current-system/sw/bin" "NPM_CONFIG_PREFIX=/var/lib/openclaw/.npm-global" ];
-        ExecStartPre = pkgs.writeShellScript "openclaw-prestart" ''
+        ExecStartPre = let ver = config.services.openclaw.version; pkg = if ver == "latest" then "openclaw" else "openclaw@${ver}"; in pkgs.writeShellScript "openclaw-prestart" ''
           NPM_BIN="/var/lib/openclaw/.npm-global/bin/openclaw"
           if [ ! -f "$NPM_BIN" ]; then
-            echo "OpenClaw not found — installing via npm..."
-            npm install -g openclaw
+            echo "OpenClaw not found — installing ${pkg} via npm..."
+            npm install -g ${pkg}
             echo "OpenClaw installed successfully"
           else
             echo "OpenClaw found at $NPM_BIN"

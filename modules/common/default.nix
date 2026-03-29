@@ -24,28 +24,13 @@
   ];
 
   # ── SSH ─────────────────────────────────────────────────────────────────────
-  services.openssh = {
-    enable = true;
-    settings = {
-      PasswordAuthentication = false;
-      PermitRootLogin = "prohibit-password";
-      X11Forwarding = false;
-    };
-  };
-
-  # Root authorized keys — add SSH public keys here
-  users.users.root = {
-    openssh.authorizedKeys.keys = [
-      # "ssh-ed25519 AAAA... user@host"
-    ];
-  };
+  # Disabled by default — containers are accessed via incus exec.
+  # Override with lib.mkForce in host configs if SSH is needed.
+  services.openssh.enable = lib.mkDefault false;
 
   # ── Firewall ─────────────────────────────────────────────────────────────────
   networking.firewall = {
     enable = true;
-    allowedTCPPorts = [
-      22    # SSH
-    ];
     allowPing = true;
   };
 
