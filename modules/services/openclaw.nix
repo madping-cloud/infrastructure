@@ -39,7 +39,6 @@ let
       mode = cfg.gateway.mode;
       bind = cfg.gateway.bind;
       auth.mode = "token";
-      denyCommands = cfg.gateway.denyCommands;
     };
     plugins.entries.duckduckgo.enabled = true;
   };
