@@ -133,7 +133,7 @@ for CONTAINER in $CONTAINERS; do
   log INFO rebuild "Running nixos-rebuild switch" container="$CONTAINER"
 
   # pipefail (line 4) propagates nixos-rebuild failure through the pipe to logger
-  if incus exec "$CONTAINER" -- nixos-rebuild switch --flake "/etc/nixos#$CONTAINER" 2>&1 | logger -t "$LOG_TAG"; then
+  if incus exec "$CONTAINER" -- nixos-rebuild switch --flake "/etc/nixos#$CONTAINER" 2>&1 | logger -t "$LOG_TAG[$CONTAINER]"; then
     incus exec "$CONTAINER" -- bash -c 'ln -sfn $(readlink -f /nix/var/nix/profiles/system) /run/current-system' 2>/dev/null || true
     log INFO deploy_ok "Deploy succeeded" container="$CONTAINER" commit="${NEW_COMMIT:0:8}"
     ((SUCCEEDED++))
