@@ -34,11 +34,17 @@ let
     };
     messages.ackReactionScope = "group-mentions";
     commands = { native = "auto"; nativeSkills = "auto"; restart = true; };
+    session.dmScope = cfg.session.dmScope;
+    hooks.internal = {
+      enabled = true;
+      entries.session-memory.enabled = cfg.hooks.sessionMemory;
+    };
     gateway = {
       port = cfg.gateway.port;
       mode = cfg.gateway.mode;
       bind = cfg.gateway.bind;
       auth.mode = "token";
+      nodes.denyCommands = cfg.gateway.denyCommands;
     };
     plugins.entries.duckduckgo.enabled = true;
   };
@@ -120,10 +126,20 @@ in
     telegram.allowFrom = lib.mkOption { type = lib.types.listOf lib.types.str; default = []; };
     telegram.requireMention = lib.mkOption { type = lib.types.bool; default = true; };
 
+    # ── Session options ──────────────────────────────────────────────────────
+    session.dmScope = lib.mkOption { type = lib.types.str; default = "per-channel-peer"; };
+
+    # ── Hooks options ─────────────────────────────────────────────────────────
+    hooks.sessionMemory = lib.mkOption { type = lib.types.bool; default = true; };
+
     # ── Gateway options ────────────────────────────────────────────────────────
     gateway.port = lib.mkOption { type = lib.types.int; default = 18789; };
     gateway.mode = lib.mkOption { type = lib.types.str; default = "local"; };
     gateway.bind = lib.mkOption { type = lib.types.str; default = "loopback"; };
+    gateway.denyCommands = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ "camera.snap" "camera.clip" "screen.record" "contacts.add" "calendar.add" "reminders.add" "sms.send" ];
+    };
   };
 
   config = lib.mkIf cfg.enable {
