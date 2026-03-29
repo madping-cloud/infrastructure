@@ -23,6 +23,8 @@
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     userName = "Connie";
     availableModels = [ "google/gemini-2.5-flash" "google/imagen-4" ];
+    discord.enable = true;
+    discord.allowFrom = [ "166609345080066048" ];
     telegram.enable = true;
     telegram.allowFrom = [ "8580758213" "5201076941" ];
   };
