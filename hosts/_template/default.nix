@@ -10,6 +10,7 @@
   sops.secrets.shared_google_ai_api_key  = { sopsFile = "/etc/nixos/secrets/${host}/shared.yaml"; key = "google_ai_api_key"; };
   sops.secrets.shared_groq_api_key       = { sopsFile = "/etc/nixos/secrets/${host}/shared.yaml"; key = "groq_api_key"; };
   sops.secrets.shared_openrouter_api_key = { sopsFile = "/etc/nixos/secrets/${host}/shared.yaml"; key = "openrouter_api_key"; };
+  sops.secrets.shared_vast_api_key       = { sopsFile = "/etc/nixos/secrets/${host}/shared.yaml"; key = "vast_api_key"; };
   sops.secrets.discord_token       = { sopsFile = "/etc/nixos/secrets/${host}/CHANGE_ME.yaml"; key = "discord_token"; };
   sops.secrets.telegram_token      = { sopsFile = "/etc/nixos/secrets/${host}/CHANGE_ME.yaml"; key = "telegram_token"; };
   sops.secrets.gateway_token       = { sopsFile = "/etc/nixos/secrets/${host}/CHANGE_ME.yaml"; key = "gateway_token"; };

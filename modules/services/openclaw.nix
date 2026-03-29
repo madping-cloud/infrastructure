@@ -188,17 +188,20 @@ SHELLRC
       S_GOOGLE=$(cat /run/secrets/shared_google_ai_api_key 2>/dev/null || echo "")
       S_GROQ=$(cat /run/secrets/shared_groq_api_key 2>/dev/null || echo "")
       S_OPENROUTER=$(cat /run/secrets/shared_openrouter_api_key 2>/dev/null || echo "")
+      S_VAST=$(cat /run/secrets/shared_vast_api_key 2>/dev/null || echo "")
       C_ANTHROPIC=$(cat /run/secrets/anthropic_api_key 2>/dev/null || echo "")
       C_OPENAI=$(cat /run/secrets/openai_api_key 2>/dev/null || echo "")
       C_GOOGLE=$(cat /run/secrets/google_ai_api_key 2>/dev/null || echo "")
       C_GROQ=$(cat /run/secrets/groq_api_key 2>/dev/null || echo "")
       C_OPENROUTER=$(cat /run/secrets/openrouter_api_key 2>/dev/null || echo "")
+      C_VAST=$(cat /run/secrets/vast_api_key 2>/dev/null || echo "")
       cat > "$ENV_FILE" <<ENVEOF
 ANTHROPIC_API_KEY=$(pick "$C_ANTHROPIC" "$S_ANTHROPIC")
 OPENAI_API_KEY=$(pick "$C_OPENAI" "$S_OPENAI")
 GEMINI_API_KEY=$(pick "$C_GOOGLE" "$S_GOOGLE")
 GROQ_API_KEY=$(pick "$C_GROQ" "$S_GROQ")
 OPENROUTER_API_KEY=$(pick "$C_OPENROUTER" "$S_OPENROUTER")
+VAST_API_KEY=$(pick "$C_VAST" "$S_VAST")
 ENVEOF
       chmod 600 "$ENV_FILE"
       chown openclaw:openclaw "$ENV_FILE"
