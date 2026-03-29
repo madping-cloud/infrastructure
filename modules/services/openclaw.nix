@@ -355,7 +355,7 @@ Add SSH hosts, device names, and other setup-specific notes here."
           fi
         '';
         ExecStart = "${pkgs.nodejs_22}/bin/node ${cfg.execPath} gateway";
-        Restart = "on-failure"; RestartSec = "30s"; StandardOutput = "journal"; StandardError = "journal"; SyslogIdentifier = "openclaw-gateway";
+        Restart = "always"; RestartSec = "5s"; StandardOutput = "journal"; StandardError = "journal"; SyslogIdentifier = "openclaw-gateway";
       } // lib.optionalAttrs (cfg.secretsFile != null) { EnvironmentFile = cfg.secretsFile; };
     };
   };
