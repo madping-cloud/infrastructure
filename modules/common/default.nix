@@ -24,9 +24,9 @@
   ];
 
   # ── SSH ─────────────────────────────────────────────────────────────────────
-  # Disabled by default — containers are accessed via incus exec.
-  # Override with lib.mkForce in host configs if SSH is needed.
-  services.openssh.enable = lib.mkDefault false;
+  # Force-disabled — containers are accessed via incus exec, not SSH.
+  # The LXC container module enables SSH by default; mkForce overrides it.
+  services.openssh.enable = lib.mkForce false;
 
   # ── Firewall ─────────────────────────────────────────────────────────────────
   networking.firewall = {
