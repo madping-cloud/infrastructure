@@ -10,3 +10,5 @@ containers:
     flake_target: atlas
   - name: aurora
     flake_target: aurora
+  - name: mira
+    flake_target: mira

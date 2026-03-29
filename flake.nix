@@ -49,6 +49,12 @@
         name       = "aurora";
         hostModule = ./hosts/aurora/default.nix;
       };
+
+      # Mira — adult content agent
+      mira = mkAgent {
+        name       = "mira";
+        hostModule = ./hosts/mira/default.nix;
+      };
     };
 
     # ── Dev Shell ─────────────────────────────────────────────────────────────
