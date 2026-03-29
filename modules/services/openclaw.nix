@@ -222,6 +222,7 @@ SHELLRC
       C_OPENROUTER=$(cat /run/secrets/openrouter_api_key 2>/dev/null || echo "")
       C_VAST=$(cat /run/secrets/vast_api_key 2>/dev/null || echo "")
       C_XAI=$(cat /run/secrets/xai_api_key 2>/dev/null || echo "")
+      GW_TOKEN=$(cat /run/secrets/gateway_token 2>/dev/null || echo "")
       cat > "$ENV_FILE" <<ENVEOF
 ANTHROPIC_API_KEY=$(pick "$C_ANTHROPIC" "$S_ANTHROPIC")
 OPENAI_API_KEY=$(pick "$C_OPENAI" "$S_OPENAI")
@@ -230,6 +231,7 @@ GROQ_API_KEY=$(pick "$C_GROQ" "$S_GROQ")
 OPENROUTER_API_KEY=$(pick "$C_OPENROUTER" "$S_OPENROUTER")
 VAST_API_KEY=$(pick "$C_VAST" "$S_VAST")
 XAI_API_KEY=$(pick "$C_XAI" "$S_XAI")
+OPENCLAW_GATEWAY_TOKEN=$GW_TOKEN
 ENVEOF
       chmod 600 "$ENV_FILE"
       chown openclaw:openclaw "$ENV_FILE"
