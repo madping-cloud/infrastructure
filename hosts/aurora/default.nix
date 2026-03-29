@@ -23,7 +23,7 @@
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     userName = "Connie";
     primaryModel = "google/gemini-2.5-flash";
-    fallbackModels = [ "openrouter/deepseek/deepseek-v3.2" "google/gemini-2.5-flash-lite" "google/imagen-4" ];
+    fallbackModels = [ "openrouter/deepseek/deepseek-v3.2" "google/gemini-2.5-flash-lite" ];
     availableModels = [
       # Google (direct — default voice, warm and conversational)
       "google/gemini-2.5-flash"
@@ -45,5 +45,13 @@
     telegram.enable = true;
     telegram.allowFrom = [ "8580758213" "5201076941" ];
   };
+  # Startup performance optimizations (recommended by openclaw doctor)
+  systemd.services.openclaw-gateway.environment = {
+    NODE_COMPILE_CACHE = "/var/tmp/openclaw-compile-cache";
+    OPENCLAW_NO_RESPAWN = "1";
+  };
+  systemd.tmpfiles.rules = [
+    "d /var/tmp/openclaw-compile-cache 0755 openclaw openclaw -"
+  ];
   system.stateVersion = "25.11";
 }
