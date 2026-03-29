@@ -24,7 +24,6 @@
     fallbackModels = [ "anthropic/claude-opus-4-6" "anthropic/claude-haiku-4-5" "google/gemini-2.5-flash" "google/imagen-4" ];
     availableModels = [ "google/gemini-2.5-flash" "google/imagen-4" "anthropic/claude-opus-4-6" "anthropic/claude-sonnet-4-6" "anthropic/claude-haiku-4-5" ];
     discord.enable = true;
-    discord.groupPolicy = "open";
     discord.allowFrom = [ "166609345080066048" ];
   };
   system.stateVersion = "25.11";
