@@ -19,6 +19,7 @@
   sops.secrets.google_ai_api_key   = { sopsFile = "/etc/nixos/secrets/${host}/cole.yaml"; key = "google_ai_api_key"; };
   sops.secrets.groq_api_key        = { sopsFile = "/etc/nixos/secrets/${host}/cole.yaml"; key = "groq_api_key"; };
   sops.secrets.openrouter_api_key  = { sopsFile = "/etc/nixos/secrets/${host}/cole.yaml"; key = "openrouter_api_key"; };
+  sops.secrets.xai_api_key         = { sopsFile = "/etc/nixos/secrets/${host}/cole.yaml"; key = "xai_api_key"; };
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     primaryModel = "anthropic/claude-sonnet-4-6";

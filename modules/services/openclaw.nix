@@ -189,12 +189,14 @@ SHELLRC
       S_GROQ=$(cat /run/secrets/shared_groq_api_key 2>/dev/null || echo "")
       S_OPENROUTER=$(cat /run/secrets/shared_openrouter_api_key 2>/dev/null || echo "")
       S_VAST=$(cat /run/secrets/shared_vast_api_key 2>/dev/null || echo "")
+      S_XAI=$(cat /run/secrets/shared_xai_api_key 2>/dev/null || echo "")
       C_ANTHROPIC=$(cat /run/secrets/anthropic_api_key 2>/dev/null || echo "")
       C_OPENAI=$(cat /run/secrets/openai_api_key 2>/dev/null || echo "")
       C_GOOGLE=$(cat /run/secrets/google_ai_api_key 2>/dev/null || echo "")
       C_GROQ=$(cat /run/secrets/groq_api_key 2>/dev/null || echo "")
       C_OPENROUTER=$(cat /run/secrets/openrouter_api_key 2>/dev/null || echo "")
       C_VAST=$(cat /run/secrets/vast_api_key 2>/dev/null || echo "")
+      C_XAI=$(cat /run/secrets/xai_api_key 2>/dev/null || echo "")
       cat > "$ENV_FILE" <<ENVEOF
 ANTHROPIC_API_KEY=$(pick "$C_ANTHROPIC" "$S_ANTHROPIC")
 OPENAI_API_KEY=$(pick "$C_OPENAI" "$S_OPENAI")
@@ -202,6 +204,7 @@ GEMINI_API_KEY=$(pick "$C_GOOGLE" "$S_GOOGLE")
 GROQ_API_KEY=$(pick "$C_GROQ" "$S_GROQ")
 OPENROUTER_API_KEY=$(pick "$C_OPENROUTER" "$S_OPENROUTER")
 VAST_API_KEY=$(pick "$C_VAST" "$S_VAST")
+XAI_API_KEY=$(pick "$C_XAI" "$S_XAI")
 ENVEOF
       chmod 600 "$ENV_FILE"
       chown openclaw:openclaw "$ENV_FILE"
@@ -221,8 +224,9 @@ ENVEOF
       GOOGLE=$(pick "$(cat /run/secrets/google_ai_api_key 2>/dev/null || echo "")" "$(cat /run/secrets/shared_google_ai_api_key 2>/dev/null || echo "")")
       GROQ=$(pick "$(cat /run/secrets/groq_api_key 2>/dev/null || echo "")" "$(cat /run/secrets/shared_groq_api_key 2>/dev/null || echo "")")
       OPENROUTER=$(pick "$(cat /run/secrets/openrouter_api_key 2>/dev/null || echo "")" "$(cat /run/secrets/shared_openrouter_api_key 2>/dev/null || echo "")")
+      XAI=$(pick "$(cat /run/secrets/xai_api_key 2>/dev/null || echo "")" "$(cat /run/secrets/shared_xai_api_key 2>/dev/null || echo "")")
 
-      if ! ( [ -z "$ANTHROPIC" ] && [ -z "$OPENAI" ] && [ -z "$GOOGLE" ] && [ -z "$GROQ" ] && [ -z "$OPENROUTER" ] ); then
+      if ! ( [ -z "$ANTHROPIC" ] && [ -z "$OPENAI" ] && [ -z "$GOOGLE" ] && [ -z "$GROQ" ] && [ -z "$OPENROUTER" ] && [ -z "$XAI" ] ); then
         TEMP=$(mktemp)
         chmod 600 "$TEMP"
         trap 'rm -f "$TEMP" "$TEMP.new"' EXIT
@@ -251,6 +255,10 @@ ENVEOF
         if [ -n "$OPENROUTER" ]; then
           rm -f "$TEMP.new"
           ${jqBin} --arg token "$OPENROUTER" '.profiles["openrouter:default"] = {"type":"token","provider":"openrouter","token":$token} | .lastGood.openrouter = "openrouter:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
+        fi
+        if [ -n "$XAI" ]; then
+          rm -f "$TEMP.new"
+          ${jqBin} --arg token "$XAI" '.profiles["xai:default"] = {"type":"token","provider":"xai","token":$token} | .lastGood.xai = "xai:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
         fi
 
         if [ -s "$TEMP" ] && ${jqBin} empty "$TEMP" 2>/dev/null; then
