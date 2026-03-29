@@ -43,6 +43,12 @@
         name       = "atlas";
         hostModule = ./hosts/atlas/default.nix;
       };
+
+      # Aurora — companion agent (Connie)
+      aurora = mkAgent {
+        name       = "aurora";
+        hostModule = ./hosts/aurora/default.nix;
+      };
     };
 
     # ── Dev Shell ─────────────────────────────────────────────────────────────
@@ -53,6 +59,7 @@
         echo "madping-cloud infrastructure"
         echo "   nixos-rebuild switch --flake .#cole    — rebuild cole"
         echo "   nixos-rebuild switch --flake .#atlas   — rebuild atlas"
+        echo "   nixos-rebuild switch --flake .#aurora  — rebuild aurora"
         if [ -d .git ]; then
           ln -sf ../../scripts/pre-commit-check.sh .git/hooks/pre-commit
         fi
