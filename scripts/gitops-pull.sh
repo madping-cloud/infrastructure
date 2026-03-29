@@ -10,6 +10,14 @@ LOCK_FILE="/tmp/gitops-pull.lock"
 LOG_TAG="gitops-pull"
 DISCORD_WEBHOOK="https://discord.com/api/webhooks/1487608243441369169/uS1jEFrouMtiL3O7JLallmV5XfMZzvAsKtXcWaScL9zXaRcz_Df599l1nPUDxH7EFRuq"
 
+# Structured logging: level=INFO|WARN|ERROR action= msg= key=value ...
+log() {
+  local level="$1"; shift
+  local action="$1"; shift
+  local msg="$1"; shift
+  logger -t "$LOG_TAG" "level=$level action=$action host=$HOSTNAME msg=\"$msg\" $*"
+}
+
 discord_alert() {
   local msg="$1"
   curl -sf -H "Content-Type: application/json" \
@@ -17,33 +25,34 @@ discord_alert() {
     "$DISCORD_WEBHOOK" >/dev/null 2>&1 || true
 }
 
+# ── Lock ──────────────────────────────────────────────────────────────────────
 exec 200>"$LOCK_FILE"
-flock -n 200 || { logger -t "$LOG_TAG" "Already running, skipping"; exit 0; }
+flock -n 200 || { log INFO lock "Already running, skipping"; exit 0; }
 
+# ── Fetch ─────────────────────────────────────────────────────────────────────
 cd "$REPO_DIR"
 OLD_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "none")
-logger -t "$LOG_TAG" "Current commit: ${OLD_COMMIT:0:8}"
 
-logger -t "$LOG_TAG" "Fetching origin/master..."
+log INFO fetch "Pulling latest from origin/master" commit_local="${OLD_COMMIT:0:8}"
 git fetch origin master --quiet
 
 NEW_COMMIT=$(git rev-parse origin/master)
-logger -t "$LOG_TAG" "Remote commit:  ${NEW_COMMIT:0:8}"
 
 if [ "$OLD_COMMIT" = "$NEW_COMMIT" ]; then
-  logger -t "$LOG_TAG" "No changes, skipping deploy"
+  log INFO fetch "No changes detected" commit="${NEW_COMMIT:0:8}"
   exit 0
 fi
 
-logger -t "$LOG_TAG" "New commits detected: ${OLD_COMMIT:0:8} -> ${NEW_COMMIT:0:8}"
+log INFO fetch "New commits available" commit_old="${OLD_COMMIT:0:8}" commit_new="${NEW_COMMIT:0:8}"
 
-# Merge instead of reset --hard so local uncommitted work is preserved
-logger -t "$LOG_TAG" "Merging (ff-only)..."
+# ── Merge ─────────────────────────────────────────────────────────────────────
 git merge --ff-only origin/master --quiet
-logger -t "$LOG_TAG" "Merge complete, now at $(git rev-parse --short HEAD)"
+MERGED_COMMIT=$(git rev-parse --short HEAD)
+log INFO merge "Fast-forward merge complete" commit="$MERGED_COMMIT"
 
+# ── Load containers ───────────────────────────────────────────────────────────
 if [ ! -f "$MACHINE_FILE" ]; then
-  logger -t "$LOG_TAG" "ERROR: No machine file at $MACHINE_FILE"
+  log ERROR config "Machine file not found" path="$MACHINE_FILE"
   exit 1
 fi
 
@@ -51,17 +60,16 @@ CONTAINERS=$(grep -oP '^\s+- name:\s+\K\S+' "$MACHINE_FILE" || true)
 CONTAINER_COUNT=$(echo "$CONTAINERS" | wc -w)
 
 if [ -z "$CONTAINERS" ]; then
-  logger -t "$LOG_TAG" "No containers defined for $HOSTNAME, nothing to deploy"
+  log WARN config "No containers defined, nothing to deploy"
   exit 0
 fi
 
-logger -t "$LOG_TAG" "Deploying $CONTAINER_COUNT container(s): $CONTAINERS"
+log INFO deploy_start "Beginning deployment" containers="$CONTAINER_COUNT" targets="$CONTAINERS"
 
+# ── Sync helper ───────────────────────────────────────────────────────────────
 sync_config() {
   local container="$1"
   local dest="/etc/nixos"
-
-  logger -t "$LOG_TAG" "Syncing nix config to $container:$dest..."
 
   incus exec "$container" -- mkdir -p "$dest"
 
@@ -90,23 +98,22 @@ sync_config() {
     incus file push "$AGE_KEY" "$container/var/lib/sops-nix/key.txt"
     incus exec "$container" -- chmod 600 /var/lib/sops-nix/key.txt
   fi
-
-  logger -t "$LOG_TAG" "Sync complete for $container"
 }
 
+# ── Deploy loop ───────────────────────────────────────────────────────────────
 FAILURES=0
 SKIPPED=0
+SUCCEEDED=0
 for CONTAINER in $CONTAINERS; do
-  logger -t "$LOG_TAG" "Deploying $CONTAINER..."
 
   if ! incus exec "$CONTAINER" -- true 2>/dev/null; then
-    logger -t "$LOG_TAG" "⊘ $CONTAINER is not running, skipping"
+    log WARN deploy_skip "Container not running" container="$CONTAINER"
     ((SKIPPED++))
     continue
   fi
 
+  log INFO sync "Syncing config and secrets" container="$CONTAINER"
   sync_config "$CONTAINER"
-  logger -t "$LOG_TAG" "Building $CONTAINER..."
 
   # Bootstrap prep: idempotent, no-op on already-deployed containers
   incus exec "$CONTAINER" -- bash -c '
@@ -115,26 +122,25 @@ for CONTAINER in $CONTAINERS; do
     rm -f /etc/nixos/configuration.nix /etc/nixos/incus.nix
   ' 2>/dev/null || true
 
+  log INFO rebuild "Running nixos-rebuild switch" container="$CONTAINER"
+
   # pipefail (line 4) propagates nixos-rebuild failure through the pipe to logger
   if incus exec "$CONTAINER" -- nixos-rebuild switch --flake "/etc/nixos#$CONTAINER" 2>&1 | logger -t "$LOG_TAG"; then
-    # Safety: ensure /run/current-system points to the correct store path
     incus exec "$CONTAINER" -- bash -c 'ln -sfn $(readlink -f /nix/var/nix/profiles/system) /run/current-system' 2>/dev/null || true
-    logger -t "$LOG_TAG" "✓ $CONTAINER deployed successfully"
+    log INFO deploy_ok "Deploy succeeded" container="$CONTAINER" commit="${NEW_COMMIT:0:8}"
+    ((SUCCEEDED++))
   else
-    logger -t "$LOG_TAG" "✗ $CONTAINER deploy FAILED"
+    log ERROR deploy_fail "Deploy failed" container="$CONTAINER" commit="${NEW_COMMIT:0:8}"
     discord_alert "⚠️ **Deploy failed:** \`$CONTAINER\` on \`$HOSTNAME\` (${NEW_COMMIT:0:8})"
     ((FAILURES++))
   fi
 done
 
+# ── Summary ───────────────────────────────────────────────────────────────────
 if [ "$FAILURES" -gt 0 ]; then
-  logger -t "$LOG_TAG" "Completed with $FAILURES failure(s), $SKIPPED skipped"
+  log ERROR deploy_end "Deployment finished with failures" succeeded="$SUCCEEDED" failed="$FAILURES" skipped="$SKIPPED" commit="${NEW_COMMIT:0:8}"
   discord_alert "🔴 **GitOps deploy finished with $FAILURES failure(s)** on \`$HOSTNAME\` (${NEW_COMMIT:0:8})"
   exit 1
 fi
 
-if [ "$SKIPPED" -gt 0 ]; then
-  logger -t "$LOG_TAG" "All reachable containers deployed (${NEW_COMMIT:0:8}), $SKIPPED not running"
-else
-  logger -t "$LOG_TAG" "All containers deployed successfully (${NEW_COMMIT:0:8})"
-fi
+log INFO deploy_end "Deployment complete" succeeded="$SUCCEEDED" failed="0" skipped="$SKIPPED" commit="${NEW_COMMIT:0:8}"
