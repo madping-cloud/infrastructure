@@ -34,7 +34,10 @@ let
       search = { enabled = true; provider = "duckduckgo"; };
       fetch.enabled = true;
     };
-    messages.ackReactionScope = "group-mentions";
+    messages = {
+      ackReactionScope = "group-mentions";
+      queue.mode = cfg.messages.queueMode;
+    };
     commands = { native = "auto"; nativeSkills = "auto"; restart = true; };
     session.dmScope = cfg.session.dmScope;
     hooks.internal = {
@@ -134,6 +137,9 @@ in
     telegram.streaming = lib.mkOption { type = lib.types.str; default = "partial"; };
     telegram.allowFrom = lib.mkOption { type = lib.types.listOf lib.types.str; default = []; };
     telegram.requireMention = lib.mkOption { type = lib.types.bool; default = true; };
+
+    # ── Messages options ────────────────────────────────────────────────────
+    messages.queueMode = lib.mkOption { type = lib.types.str; default = "steer"; };
 
     # ── Session options ──────────────────────────────────────────────────────
     session.dmScope = lib.mkOption { type = lib.types.str; default = "per-channel-peer"; };
