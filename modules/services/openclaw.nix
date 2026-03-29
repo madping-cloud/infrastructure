@@ -85,7 +85,9 @@ let
       };
     });
 
-  fullConfig = baseConfig // lib.optionalAttrs (channelsAttr != {}) { channels = channelsAttr; };
+  fullConfig = baseConfig
+    // lib.optionalAttrs (channelsAttr != {}) { channels = channelsAttr; }
+    // lib.optionalAttrs (cfg.customModelProviders != {}) { models = { mode = "merge"; providers = cfg.customModelProviders; }; };
   configJson = builtins.toJSON fullConfig;
 in
 {
@@ -108,6 +110,11 @@ in
         "google/gemini-2.5-flash"
         "google/imagen-4"
       ];
+    };
+    customModelProviders = lib.mkOption {
+      type = lib.types.attrs;
+      default = {};
+      description = "Custom model provider definitions merged into models.providers (for non-built-in models like xAI)";
     };
 
     # ── Discord options ────────────────────────────────────────────────────────

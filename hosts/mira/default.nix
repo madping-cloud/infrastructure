@@ -24,6 +24,7 @@
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     userName = "Marc";
     primaryModel = "x-ai/grok-4.20-0309-reasoning";
+    fallbackModels = [ "google/gemini-2.5-flash" ];
     availableModels = [
       "google/gemini-2.5-flash"
       "google/imagen-4"
@@ -32,6 +33,16 @@
       "x-ai/grok-4-1-fast-reasoning"
       "x-ai/grok-4-1-fast-non-reasoning"
     ];
+    customModelProviders.xai = {
+      baseUrl = "https://api.x.ai/v1";
+      api = "openai-responses";
+      models = [
+        { id = "grok-4.20-0309-reasoning"; name = "Grok 4.20 (Reasoning)"; reasoning = true; input = [ "text" "image" ]; cost = { input = 2; output = 6; cacheRead = 0.2; cacheWrite = 0; }; contextWindow = 2000000; maxTokens = 30000; }
+        { id = "grok-4.20-0309-non-reasoning"; name = "Grok 4.20 (Non-Reasoning)"; reasoning = false; input = [ "text" "image" ]; cost = { input = 2; output = 6; cacheRead = 0.2; cacheWrite = 0; }; contextWindow = 2000000; maxTokens = 30000; }
+        { id = "grok-4-1-fast-reasoning"; name = "Grok 4.1 Fast (Reasoning)"; reasoning = true; input = [ "text" "image" ]; cost = { input = 0.2; output = 0.5; cacheRead = 0.05; cacheWrite = 0; }; contextWindow = 2000000; maxTokens = 30000; }
+        { id = "grok-4-1-fast-non-reasoning"; name = "Grok 4.1 Fast (Non-Reasoning)"; reasoning = false; input = [ "text" "image" ]; cost = { input = 0.2; output = 0.5; cacheRead = 0.05; cacheWrite = 0; }; contextWindow = 2000000; maxTokens = 30000; }
+      ];
+    };
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];
   };
