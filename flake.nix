@@ -37,12 +37,6 @@
         hostModule = ./hosts/cole/default.nix;
       };
 
-      # Aurora — Connie's companion agent
-      aurora = mkAgent {
-        name       = "aurora";
-        hostModule = ./hosts/aurora/default.nix;
-      };
-
 
       # Atlas — primary assistant agent
       atlas = mkAgent {

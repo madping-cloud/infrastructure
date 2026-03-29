@@ -6,7 +6,5 @@ ip: 10.100.0.1
 containers:
   - name: cole
     flake_target: cole
-  - name: aurora
-    flake_target: aurora
   - name: atlas
     flake_target: atlas
