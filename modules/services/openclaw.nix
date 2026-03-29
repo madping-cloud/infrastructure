@@ -124,10 +124,6 @@ in
     gateway.port = lib.mkOption { type = lib.types.int; default = 18789; };
     gateway.mode = lib.mkOption { type = lib.types.str; default = "local"; };
     gateway.bind = lib.mkOption { type = lib.types.str; default = "loopback"; };
-    gateway.denyCommands = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = [ "camera.snap" "camera.clip" "screen.record" "contacts.add" "calendar.add" "reminders.add" "sms.send" ];
-    };
   };
 
   config = lib.mkIf cfg.enable {
