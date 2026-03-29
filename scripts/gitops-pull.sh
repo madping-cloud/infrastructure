@@ -15,7 +15,12 @@ log() {
   local level="$1"; shift
   local action="$1"; shift
   local msg="$1"; shift
-  logger -t "$LOG_TAG" "level=$level action=$action host=$HOSTNAME msg=\"$msg\" $*"
+  # Quote each trailing key=value pair for SIEM-safe output
+  local kv=""
+  for arg in "$@"; do
+    kv="$kv ${arg%%=*}=\"${arg#*=}\""
+  done
+  logger -t "$LOG_TAG" "level=\"$level\" action=\"$action\" host=\"$HOSTNAME\" msg=\"$msg\"$kv"
 }
 
 discord_alert() {
