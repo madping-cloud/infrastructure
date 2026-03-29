@@ -11,10 +11,12 @@ let
       profiles = {
         "anthropic:default" = { provider = "anthropic"; mode = "api_key"; };
         "google:default"    = { provider = "google";    mode = "api_key"; };
+        "xai:default"       = { provider = "xai";       mode = "api_key"; };
       };
       order = {
         anthropic = [ "anthropic:default" ];
         google    = [ "google:default" ];
+        xai       = [ "xai:default" ];
       };
     };
     agents.defaults = {
