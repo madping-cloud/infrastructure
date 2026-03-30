@@ -37,7 +37,7 @@ let
     };
     tools = {
       web = {
-        search = { enabled = true; provider = "duckduckgo"; };
+        search = { enabled = true; provider = cfg.webSearch.provider; };
         fetch.enabled = true;
       };
     } // (if cfg.toolsAllow != [] then { allow = cfg.toolsAllow; } else {});
@@ -60,7 +60,6 @@ let
     };
     plugins.entries.duckduckgo.enabled = true;
     plugins.entries.tavily.enabled = cfg.webSearch.tavily.enable;
-    tools.web.search.provider = cfg.webSearch.provider;
   };
 
   # Merge channels from both discord and telegram
