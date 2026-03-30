@@ -45,6 +45,82 @@
     telegram.enable = true;
     telegram.allowFrom = [ "8580758213" "5201076941" ];
   };
+  # Connie scheduled messages — systemd timers (bypasses agent runtime for reliability)
+  environment.systemPackages = [ pkgs.jq ];
+
+  systemd.services.connie-send-wakeup = {
+    description = "Send Connie wakeup message";
+    serviceConfig = {
+      Type = "oneshot";
+      User = "openclaw";
+      ExecStart = "/usr/local/bin/connie-send.sh wakeup";
+    };
+  };
+  systemd.services.connie-send-daytime = {
+    description = "Send Connie daytime message";
+    serviceConfig = {
+      Type = "oneshot";
+      User = "openclaw";
+      ExecStart = "/usr/local/bin/connie-send.sh daytime";
+    };
+  };
+  systemd.services.connie-send-goodnight = {
+    description = "Send Connie goodnight message";
+    serviceConfig = {
+      Type = "oneshot";
+      User = "openclaw";
+      ExecStart = "/usr/local/bin/connie-send.sh goodnight";
+    };
+  };
+
+  systemd.timers.connie-send-wakeup = {
+    description = "Connie wakeup message timer (12:00 PM)";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "*-*-* 12:00:00";
+      RandomizedDelaySec = "5min";
+      Persistent = true;
+    };
+  };
+  systemd.timers.connie-send-daytime = {
+    description = "Connie daytime message timer (4:30 PM)";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "*-*-* 16:30:00";
+      RandomizedDelaySec = "10min";
+      Persistent = true;
+    };
+  };
+  systemd.timers.connie-send-goodnight = {
+    description = "Connie goodnight message timer (2:00 AM)";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "*-*-* 02:00:00";
+      RandomizedDelaySec = "5min";
+      Persistent = true;
+    };
+  };
+
+  # Deploy connie-send.sh script
+  system.activationScripts.connieSendScript = {
+    text = ''
+      install -m 755 -o root -g root /dev/stdin /usr/local/bin/connie-send.sh << 'SCRIPT'
+#!/usr/bin/env bash
+set -euo pipefail
+CATEGORY="${1:-daytime}"
+MESSAGES_FILE="/var/lib/openclaw/workspace/connie_messages.json"
+OPENCLAW="/var/lib/openclaw/.npm-global/bin/openclaw"
+CONNIE_ID="8580758213"
+if [ ! -f "$MESSAGES_FILE" ]; then echo "ERROR: $MESSAGES_FILE not found" >&2; exit 1; fi
+MESSAGE=$(${pkgs.jq}/bin/jq -r --arg cat "$CATEGORY" '.[$cat][]' "$MESSAGES_FILE" | ${pkgs.coreutils}/bin/shuf -n 1)
+if [ -z "$MESSAGE" ]; then echo "ERROR: No messages for category: $CATEGORY" >&2; exit 1; fi
+echo "[$(date -Iseconds)] Sending $CATEGORY to Connie: $MESSAGE"
+"$OPENCLAW" message send --channel telegram -t "$CONNIE_ID" -m "$MESSAGE"
+SCRIPT
+    '';
+    deps = [];
+  };
+
   # Startup performance optimizations (recommended by openclaw doctor)
   systemd.services.openclaw-gateway.environment = {
     NODE_COMPILE_CACHE = "/var/tmp/openclaw-compile-cache";
