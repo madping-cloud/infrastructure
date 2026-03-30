@@ -107,7 +107,7 @@
       install -m 755 -o root -g root /dev/stdin /usr/local/bin/connie-send.sh << 'SCRIPT'
 #!/usr/bin/env bash
 set -euo pipefail
-CATEGORY="${1:-daytime}"
+CATEGORY="''${1:-daytime}"
 MESSAGES_FILE="/var/lib/openclaw/workspace/connie_messages.json"
 OPENCLAW="/var/lib/openclaw/.npm-global/bin/openclaw"
 CONNIE_ID="8580758213"
