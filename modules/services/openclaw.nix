@@ -35,10 +35,12 @@ let
       maxConcurrent = 4;
       subagents.maxConcurrent = 8;
     };
-    tools.web = {
-      search = { enabled = true; provider = "duckduckgo"; };
-      fetch.enabled = true;
-    };
+    tools = {
+      web = {
+        search = { enabled = true; provider = "duckduckgo"; };
+        fetch.enabled = true;
+      };
+    } // (if cfg.toolsAllow != [] then { allow = cfg.toolsAllow; } else {});
     messages = {
       ackReactionScope = "group-mentions";
       queue.mode = cfg.messages.queueMode;
@@ -128,6 +130,11 @@ in
       type = lib.types.attrsOf lib.types.str;
       default = {};
       description = "Map of model ID to alias string. e.g. { \"anthropic/claude-sonnet-4-6\" = \"sonnet\"; }";
+    };
+    toolsAllow = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [];
+      description = "Extra tools to allow beyond defaults. e.g. [ \"cron\" ] to allow the agent to manage cron jobs.";
     };
 
     # ── Discord options ────────────────────────────────────────────────────────
@@ -222,6 +229,7 @@ SHELLRC
       C_OPENROUTER=$(cat /run/secrets/openrouter_api_key 2>/dev/null || echo "")
       C_VAST=$(cat /run/secrets/vast_api_key 2>/dev/null || echo "")
       C_XAI=$(cat /run/secrets/xai_api_key 2>/dev/null || echo "")
+      GW_TOKEN=$(cat /run/secrets/gateway_token 2>/dev/null || echo "")
       cat > "$ENV_FILE" <<ENVEOF
 ANTHROPIC_API_KEY=$(pick "$C_ANTHROPIC" "$S_ANTHROPIC")
 OPENAI_API_KEY=$(pick "$C_OPENAI" "$S_OPENAI")
@@ -230,6 +238,7 @@ GROQ_API_KEY=$(pick "$C_GROQ" "$S_GROQ")
 OPENROUTER_API_KEY=$(pick "$C_OPENROUTER" "$S_OPENROUTER")
 VAST_API_KEY=$(pick "$C_VAST" "$S_VAST")
 XAI_API_KEY=$(pick "$C_XAI" "$S_XAI")
+OPENCLAW_GATEWAY_TOKEN=$GW_TOKEN
 ENVEOF
       chmod 600 "$ENV_FILE"
       chown openclaw:openclaw "$ENV_FILE"

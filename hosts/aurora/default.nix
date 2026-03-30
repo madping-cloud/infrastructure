@@ -22,11 +22,36 @@
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     userName = "Connie";
-    availableModels = [ "google/gemini-2.5-flash" "google/imagen-4" ];
+    primaryModel = "google/gemini-2.5-flash";
+    fallbackModels = [ "openrouter/deepseek/deepseek-v3.2" "google/gemini-2.5-flash-lite" ];
+    availableModels = [
+      # Google (direct — default voice, warm and conversational)
+      "google/gemini-2.5-flash"
+      "google/gemini-2.5-flash-lite"
+      "google/imagen-4"
+    ];
+    # Models with aliases — cheap options via OpenRouter (China allowed for Aurora)
+    modelAliases = {
+      "google/gemini-2.5-flash"                          = "gemini-flash";      # Default — warm, multimodal, conversational
+      "google/gemini-2.5-flash-lite"                     = "gemini-flash-lite"; # $0.10/1M — 1M ctx, lighter/cheaper Google
+      "openrouter/qwen/qwen3.5-flash-02-23"              = "qwen-flash";        # $0.065/1M — 1M ctx, multimodal, tools, reasoning. Cheapest capable worker.
+      "openrouter/deepseek/deepseek-v3.2"                = "deepseek-v3";       # $0.26/1M — 163k ctx, tools + reasoning. Best quality/value for complex questions.
+      "openrouter/qwen/qwen3-235b-a22b-thinking-2507"    = "qwen-think";        # $0.15/$1.50 — Deep reasoning. Use sparingly (output is pricey).
+      "openrouter/mistralai/mistral-small-2603"          = "mistral-small";     # $0.15/1M — creative writing, narrative, storytelling (French sensibility)
+    };
+    toolsAllow = [ "cron" ];  # Allow Aurora to manage her own cron jobs
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];
     telegram.enable = true;
     telegram.allowFrom = [ "8580758213" "5201076941" ];
   };
+  # Startup performance optimizations (recommended by openclaw doctor)
+  systemd.services.openclaw-gateway.environment = {
+    NODE_COMPILE_CACHE = "/var/tmp/openclaw-compile-cache";
+    OPENCLAW_NO_RESPAWN = "1";
+  };
+  systemd.tmpfiles.rules = [
+    "d /var/tmp/openclaw-compile-cache 0755 openclaw openclaw -"
+  ];
   system.stateVersion = "25.11";
 }

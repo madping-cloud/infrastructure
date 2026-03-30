@@ -43,8 +43,23 @@
         { id = "grok-4-1-fast-non-reasoning"; name = "Grok 4.1 Fast (Non-Reasoning)"; reasoning = false; input = [ "text" "image" ]; cost = { input = 0.2; output = 0.5; cacheRead = 0.05; cacheWrite = 0; }; contextWindow = 2000000; maxTokens = 30000; }
       ];
     };
+    modelAliases = {
+      "google/gemini-2.5-flash"              = "gemini-flash";
+      "xai/grok-4.20-0309-reasoning"         = "grok-think";
+      "xai/grok-4.20-0309-non-reasoning"     = "grok";
+      "xai/grok-4-1-fast-reasoning"          = "grok-fast-think";
+      "xai/grok-4-1-fast-non-reasoning"      = "grok-fast";
+    };
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];
   };
+  # Startup performance optimizations (recommended by openclaw doctor)
+  systemd.services.openclaw-gateway.environment = {
+    NODE_COMPILE_CACHE = "/var/tmp/openclaw-compile-cache";
+    OPENCLAW_NO_RESPAWN = "1";
+  };
+  systemd.tmpfiles.rules = [
+    "d /var/tmp/openclaw-compile-cache 0755 openclaw openclaw -"
+  ];
   system.stateVersion = "25.11";
 }
