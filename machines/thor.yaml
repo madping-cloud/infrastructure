@@ -12,3 +12,5 @@ containers:
     flake_target: aurora
   - name: mira
     flake_target: mira
+  - name: rune
+    flake_target: rune
