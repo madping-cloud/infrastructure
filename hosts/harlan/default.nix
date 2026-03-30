@@ -14,11 +14,6 @@
   sops.secrets.discord_token       = { sopsFile = "/etc/nixos/secrets/${host}/harlan.yaml"; key = "discord_token"; };
   sops.secrets.telegram_token      = { sopsFile = "/etc/nixos/secrets/${host}/harlan.yaml"; key = "telegram_token"; };
   sops.secrets.gateway_token       = { sopsFile = "/etc/nixos/secrets/${host}/harlan.yaml"; key = "gateway_token"; };
-  sops.secrets.anthropic_api_key   = { sopsFile = "/etc/nixos/secrets/${host}/harlan.yaml"; key = "anthropic_api_key"; };
-  sops.secrets.openai_api_key      = { sopsFile = "/etc/nixos/secrets/${host}/harlan.yaml"; key = "openai_api_key"; };
-  sops.secrets.google_ai_api_key   = { sopsFile = "/etc/nixos/secrets/${host}/harlan.yaml"; key = "google_ai_api_key"; };
-  sops.secrets.groq_api_key        = { sopsFile = "/etc/nixos/secrets/${host}/harlan.yaml"; key = "groq_api_key"; };
-  sops.secrets.openrouter_api_key  = { sopsFile = "/etc/nixos/secrets/${host}/harlan.yaml"; key = "openrouter_api_key"; };
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     userName = "Marc";
