@@ -11,6 +11,7 @@
   sops.secrets.shared_groq_api_key       = { sopsFile = "/etc/nixos/secrets/${host}/shared.yaml"; key = "groq_api_key"; };
   sops.secrets.shared_openrouter_api_key = { sopsFile = "/etc/nixos/secrets/${host}/shared.yaml"; key = "openrouter_api_key"; };
   sops.secrets.discord_token       = { sopsFile = "/etc/nixos/secrets/${host}/rune.yaml"; key = "discord_token"; };
+  sops.secrets.telegram_token      = { sopsFile = "/etc/nixos/secrets/${host}/rune.yaml"; key = "telegram_token"; };
   sops.secrets.gateway_token       = { sopsFile = "/etc/nixos/secrets/${host}/rune.yaml"; key = "gateway_token"; };
   sops.secrets.anthropic_api_key   = { sopsFile = "/etc/nixos/secrets/${host}/rune.yaml"; key = "anthropic_api_key"; };
   sops.secrets.openai_api_key      = { sopsFile = "/etc/nixos/secrets/${host}/rune.yaml"; key = "openai_api_key"; };
@@ -78,6 +79,9 @@
     };
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];
+    telegram.enable = true;
+    telegram.dmPolicy = "allowlist";
+    telegram.allowFrom = [ "5201076941" ];
   };
   # Startup performance optimizations
   systemd.services.openclaw-gateway.environment = {
