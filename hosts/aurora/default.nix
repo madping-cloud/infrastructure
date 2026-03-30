@@ -46,7 +46,7 @@
     telegram.allowFrom = [ "8580758213" "5201076941" ];
   };
   # Connie scheduled messages — systemd timers (bypasses agent runtime for reliability)
-  environment.systemPackages = [ pkgs.jq ];
+  environment.systemPackages = [ pkgs.jq  pkgs.socat ];
 
   systemd.services.connie-send-wakeup = {
     description = "Send Connie wakeup message";
@@ -129,5 +129,19 @@ SCRIPT
   systemd.tmpfiles.rules = [
     "d /var/tmp/openclaw-compile-cache 0755 openclaw openclaw -"
   ];
+
+  # OpenClaw GUI bridge — expose port 18790 for nginx reverse proxy on Thor
+  systemd.services.openclaw-bridge = {
+    description = "Bridge OpenClaw GUI to network interface";
+    after = [ "network.target" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      ExecStart = "${pkgs.socat}/bin/socat TCP-LISTEN:18790,fork,reuseaddr,bind=0.0.0.0 TCP:127.0.0.1:18789";
+      Restart = "always";
+      RestartSec = "3s";
+    };
+  };
+
+  networking.firewall.allowedTCPPorts = [ 18790 ];
   system.stateVersion = "25.11";
 }

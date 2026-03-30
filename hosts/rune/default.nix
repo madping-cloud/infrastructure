@@ -83,7 +83,7 @@
     telegram.dmPolicy = "allowlist";
     telegram.allowFrom = [ "5201076941" ];
   };
-  environment.systemPackages = [ pkgs.gh pkgs.git ];
+  environment.systemPackages = [ pkgs.gh pkgs.git  pkgs.socat ];
 
   # Startup performance optimizations
   systemd.services.openclaw-gateway.environment = {
@@ -94,5 +94,19 @@
     "d /var/tmp/openclaw-compile-cache 0755 openclaw openclaw -"
   ];
 
+
+  # OpenClaw GUI bridge — expose port 18790 for nginx reverse proxy on Thor
+  systemd.services.openclaw-bridge = {
+    description = "Bridge OpenClaw GUI to network interface";
+    after = [ "network.target" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      ExecStart = "${pkgs.socat}/bin/socat TCP-LISTEN:18790,fork,reuseaddr,bind=0.0.0.0 TCP:127.0.0.1:18789";
+      Restart = "always";
+      RestartSec = "3s";
+    };
+  };
+
+  networking.firewall.allowedTCPPorts = [ 18790 ];
   system.stateVersion = "25.11";
 }
