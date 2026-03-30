@@ -14,6 +14,7 @@
   sops.secrets.discord_token       = { sopsFile = "/etc/nixos/secrets/${host}/cole.yaml"; key = "discord_token"; };
   sops.secrets.telegram_token      = { sopsFile = "/etc/nixos/secrets/${host}/cole.yaml"; key = "telegram_token"; };
   sops.secrets.gateway_token       = { sopsFile = "/etc/nixos/secrets/${host}/cole.yaml"; key = "gateway_token"; };
+  sops.secrets.tavily_api_key      = { sopsFile = "/etc/nixos/secrets/${host}/cole.yaml"; key = "tavily_api_key"; };
   sops.secrets.anthropic_api_key   = { sopsFile = "/etc/nixos/secrets/${host}/cole.yaml"; key = "anthropic_api_key"; };
   sops.secrets.openai_api_key      = { sopsFile = "/etc/nixos/secrets/${host}/cole.yaml"; key = "openai_api_key"; };
   sops.secrets.google_ai_api_key   = { sopsFile = "/etc/nixos/secrets/${host}/cole.yaml"; key = "google_ai_api_key"; };
@@ -63,6 +64,11 @@
     };
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];
+    telegram.enable = true;
+    telegram.dmPolicy = "allowlist";
+    telegram.allowFrom = [ "5201076941" ];
+    webSearch.provider = "tavily";
+    webSearch.tavily.enable = true;
   };
   # Startup performance optimizations (recommended by openclaw doctor)
   systemd.services.openclaw-gateway.environment = {

@@ -59,6 +59,8 @@ let
       nodes.denyCommands = cfg.gateway.denyCommands;
     };
     plugins.entries.duckduckgo.enabled = true;
+    plugins.entries.tavily.enabled = cfg.webSearch.tavily.enable;
+    tools.web.search.provider = cfg.webSearch.provider;
   };
 
   # Merge channels from both discord and telegram
@@ -172,6 +174,10 @@ in
       type = lib.types.listOf lib.types.str;
       default = [ "camera.snap" "camera.clip" "screen.record" "contacts.add" "calendar.add" "reminders.add" "sms.send" ];
     };
+
+    # ── Web search options ─────────────────────────────────────────────────────
+    webSearch.provider = lib.mkOption { type = lib.types.str; default = "duckduckgo"; };
+    webSearch.tavily.enable = lib.mkOption { type = lib.types.bool; default = false; };
   };
 
   config = lib.mkIf cfg.enable {
@@ -323,6 +329,11 @@ ENVEOF
         if [ -n "$TELEGRAM" ] && ${jqBin} -e '.channels.telegram' "$TEMP" >/dev/null 2>&1; then
           rm -f "$TEMP.new"
           ${jqBin} --arg token "$TELEGRAM" '.channels.telegram.accounts.default.botToken = $token' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
+        fi
+        TAVILY=$(cat /run/secrets/tavily_api_key 2>/dev/null || echo "")
+        if [ -n "$TAVILY" ]; then
+          rm -f "$TEMP.new"
+          ${jqBin} --arg key "$TAVILY" '.plugins.entries.tavily.config.webSearch.apiKey = $key' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
         fi
         if [ -n "$GATEWAY" ]; then
           rm -f "$TEMP.new"
