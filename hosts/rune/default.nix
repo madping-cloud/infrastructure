@@ -83,6 +83,8 @@
     telegram.dmPolicy = "allowlist";
     telegram.allowFrom = [ "5201076941" ];
   };
+  environment.systemPackages = [ pkgs.gh pkgs.git ];
+
   # Startup performance optimizations
   systemd.services.openclaw-gateway.environment = {
     NODE_COMPILE_CACHE = "/var/tmp/openclaw-compile-cache";
