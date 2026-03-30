@@ -21,9 +21,37 @@
   sops.secrets.openrouter_api_key  = { sopsFile = "/etc/nixos/secrets/${host}/atlas.yaml"; key = "openrouter_api_key"; };
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
-    availableModels = [ "google/gemini-2.5-flash" "google/imagen-4" ];
+    userName = "Marc";
+    primaryModel = "google/gemini-2.5-flash";
+    fallbackModels = [
+      "anthropic/claude-sonnet-4-6"
+      "openrouter/meta-llama/llama-4-maverick"
+    ];
+    availableModels = [
+      # Google (direct — default, strong multimodal)
+      "google/gemini-2.5-flash"
+      "google/gemini-2.5-flash-lite"
+      "google/imagen-4"
+      # Anthropic (direct — high quality, reliable)
+      "anthropic/claude-sonnet-4-6"
+      "anthropic/claude-haiku-4-5"
+      # OpenRouter — cheap capable workers
+      "openrouter/meta-llama/llama-4-scout"
+      "openrouter/meta-llama/llama-4-maverick"
+      "openrouter/mistralai/mistral-small-2603"
+      "openrouter/inception/mercury-2"
+      "openrouter/google/gemini-2.5-flash-lite"
+    ];
     modelAliases = {
-      "google/gemini-2.5-flash" = "gemini-flash";
+      "google/gemini-2.5-flash"                = "gemini-flash";       # Default — fast, multimodal, conversational
+      "google/gemini-2.5-flash-lite"           = "gemini-flash-lite";  # Lighter/cheaper Google
+      "anthropic/claude-sonnet-4-6"            = "sonnet";             # Best reasoning, reliable, on subscription
+      "anthropic/claude-haiku-4-5"             = "haiku";              # Fastest Claude, mechanical tasks
+      "openrouter/meta-llama/llama-4-scout"    = "llama-scout";        # $0.08/1M — cheapest capable worker
+      "openrouter/meta-llama/llama-4-maverick" = "llama-maverick";     # $0.15/1M — 1M ctx, multi-step tasks
+      "openrouter/mistralai/mistral-small-2603" = "mistral-small";     # $0.15/1M — creative/narrative
+      "openrouter/inception/mercury-2"          = "mercury";           # $0.25/1M — 1000+ tok/s, text-only
+      "openrouter/google/gemini-2.5-flash-lite" = "or-gemini-lite";    # OpenRouter path for Gemini lite
     };
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];
