@@ -43,8 +43,8 @@
       "openrouter/mistralai/mistral-small-2603"         = "mistral-small";
       "openrouter/inception/mercury-2"                  = "mercury";
     };
-    webSearch.enable = true;
     webSearch.provider = "tavily";
+    webSearch.tavily.enable = true;
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];
     telegram.enable = true;
