@@ -23,11 +23,13 @@
       "anthropic/claude-sonnet-4-6"
       "anthropic/claude-opus-4-6"
       "anthropic/claude-haiku-4-5"
+      "google/gemini-2.5-flash"
     ];
     modelAliases = {
       "anthropic/claude-sonnet-4-6" = "sonnet";
       "anthropic/claude-opus-4-6"   = "opus";
       "anthropic/claude-haiku-4-5"  = "haiku";
+      "google/gemini-2.5-flash"     = "gemini-flash";
     };
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];

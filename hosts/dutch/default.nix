@@ -29,6 +29,7 @@
       "openrouter/meta-llama/llama-4-maverick"
       "openrouter/mistralai/mistral-small-2603"
       "openrouter/inception/mercury-2"
+      "openrouter/google/gemini-2.5-flash"
     ];
     modelAliases = {
       "openrouter/deepseek/deepseek-v3.2"               = "deepseek-v3";
@@ -37,6 +38,7 @@
       "openrouter/meta-llama/llama-4-maverick"          = "llama-maverick";
       "openrouter/mistralai/mistral-small-2603"         = "mistral-small";
       "openrouter/inception/mercury-2"                  = "mercury";
+      "openrouter/google/gemini-2.5-flash"              = "gemini-flash";
     };
     webSearch.provider = "tavily";
     webSearch.tavily.enable = true;
