@@ -63,6 +63,20 @@
         name       = "rune";
         hostModule = ./hosts/rune/default.nix;
       };
+
+      # Dutch — Cannabis knowledge agent
+      # Strain research, terpenes, cultivar recs, market intel. DeepSeek V3.2 primary.
+      dutch = mkAgent {
+        name       = "dutch";
+        hostModule = ./hosts/dutch/default.nix;
+      };
+
+      # Harlan — Microsoft MXDR specialist
+      # MXDR onboarding, Defender stack, Sentinel KQL, alert tuning. Anthropic-only.
+      harlan = mkAgent {
+        name       = "harlan";
+        hostModule = ./hosts/harlan/default.nix;
+      };
     };
 
     # ── Dev Shell ─────────────────────────────────────────────────────────────

@@ -14,3 +14,7 @@ containers:
     flake_target: mira
   - name: rune
     flake_target: rune
+  - name: dutch
+    flake_target: dutch
+  - name: harlan
+    flake_target: harlan
