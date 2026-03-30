@@ -151,16 +151,6 @@ for CONTAINER in $CONTAINERS; do
   fi
 done
 
-# ── Personality seed ─────────────────────────────────────────────────────────
-SEED_SCRIPT="$REPO_DIR/scripts/seed-personalities.sh"
-if [[ -x "$SEED_SCRIPT" ]]; then
-  log INFO personality_seed "Seeding personality files to containers"
-  "$SEED_SCRIPT" 2>&1 | logger -t "$LOG_TAG[personality-seed]" || \
-    log WARN personality_seed "Personality seed script exited non-zero (non-fatal)"
-else
-  log WARN personality_seed "seed-personalities.sh not found or not executable, skipping" path="$SEED_SCRIPT"
-fi
-
 # ── Summary ───────────────────────────────────────────────────────────────────
 if [ "$FAILURES" -gt 0 ]; then
   log ERROR deploy_end "Deployment finished with failures" succeeded="$SUCCEEDED" failed="$FAILURES" skipped="$SKIPPED" commit="${NEW_COMMIT:0:8}"
