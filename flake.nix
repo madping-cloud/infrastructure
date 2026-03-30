@@ -55,6 +55,14 @@
         name       = "mira";
         hostModule = ./hosts/mira/default.nix;
       };
+
+      # Rune — Persona Architect
+      # Designs, refines, and versions agent personalities (including its own).
+      # Named by the agent itself on first session. Drafts changes; Marc approves.
+      rune = mkAgent {
+        name       = "rune";
+        hostModule = ./hosts/rune/default.nix;
+      };
     };
 
     # ── Dev Shell ─────────────────────────────────────────────────────────────
