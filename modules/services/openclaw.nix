@@ -86,6 +86,7 @@ let
         dmPolicy = cfg.telegram.dmPolicy;
         groupPolicy = cfg.telegram.groupPolicy;
         streaming = cfg.telegram.streaming;
+        allowFrom = cfg.telegram.allowFrom;
         groups."*".requireMention = cfg.telegram.requireMention;
         accounts.default = {
           dmPolicy = "allowlist";
@@ -406,7 +407,19 @@ Add SSH hosts, device names, and other setup-specific notes here."
       serviceConfig = {
         Type = "simple"; User = "openclaw"; Group = "openclaw"; WorkingDirectory = "/var/lib/openclaw";
         Environment = [ "PATH=${pkgs.nodejs_22}/bin:${pkgs.bash}/bin:${pkgs.coreutils}/bin:${pkgs.gnused}/bin:${pkgs.gnugrep}/bin:/run/current-system/sw/bin" "NPM_CONFIG_PREFIX=/var/lib/openclaw/.npm-global" ];
-        ExecStartPre = let ver = cfg.version; pkg = if ver == "latest" then "openclaw" else "openclaw@${ver}"; in pkgs.writeShellScript "openclaw-prestart" ''
+        ExecStartPre = let
+          ver = cfg.version;
+          pkg = if ver == "latest" then "openclaw" else "openclaw@${ver}";
+          delExprs = (lib.optional (!cfg.discord.enable) ".channels.discord")
+            ++ (lib.optional (!cfg.telegram.enable) ".channels.telegram");
+          jqDel = lib.concatStringsSep ", " delExprs;
+          channelCleanup = if delExprs == [] then "" else ''
+            CONFIG="/var/lib/openclaw/.openclaw/openclaw.json"
+            if [ -f "$CONFIG" ]; then
+              ${jqBin} 'del(${jqDel})' "$CONFIG" > "$CONFIG.tmp" && mv "$CONFIG.tmp" "$CONFIG"
+            fi
+          '';
+        in pkgs.writeShellScript "openclaw-prestart" ''
           NPM_BIN="/var/lib/openclaw/.npm-global/bin/openclaw"
           if [ ! -f "$NPM_BIN" ]; then
             echo "OpenClaw not found — installing ${pkg} via npm..."
@@ -415,6 +428,7 @@ Add SSH hosts, device names, and other setup-specific notes here."
           else
             echo "OpenClaw found at $NPM_BIN"
           fi
+          ${channelCleanup}
         '';
         ExecStart = "${pkgs.nodejs_22}/bin/node ${cfg.execPath} gateway";
         Restart = "always"; RestartSec = "5s"; StandardOutput = "journal"; StandardError = "journal"; SyslogIdentifier = "openclaw-gateway";
