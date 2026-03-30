@@ -330,6 +330,13 @@ ENVEOF
           rm -f "$TEMP.new"
           ${jqBin} --arg token "$TELEGRAM" '.channels.telegram.accounts.default.botToken = $token' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
         fi
+        # Remove channels that OpenClaw may have persisted at runtime but are not enabled in Nix config
+        ${lib.optionalString (!cfg.telegram.enable) ''
+        if ${jqBin} -e '.channels.telegram' "$TEMP" >/dev/null 2>&1; then
+          rm -f "$TEMP.new"
+          ${jqBin} 'del(.channels.telegram)' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
+        fi
+        ''}
         TAVILY=$(cat /run/secrets/tavily_api_key 2>/dev/null || echo "")
         if [ -n "$TAVILY" ]; then
           rm -f "$TEMP.new"
