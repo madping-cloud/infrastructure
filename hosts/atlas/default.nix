@@ -22,11 +22,22 @@
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     availableModels = [ "google/gemini-2.5-flash" "google/imagen-4" ];
+    modelAliases = {
+      "google/gemini-2.5-flash" = "gemini-flash";
+    };
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];
     discord.threadBindings.enable = true;
     telegram.enable = true;
     telegram.allowFrom = [ "5201076941" ];
   };
+  # Startup performance optimizations (recommended by openclaw doctor)
+  systemd.services.openclaw-gateway.environment = {
+    NODE_COMPILE_CACHE = "/var/tmp/openclaw-compile-cache";
+    OPENCLAW_NO_RESPAWN = "1";
+  };
+  systemd.tmpfiles.rules = [
+    "d /var/tmp/openclaw-compile-cache 0755 openclaw openclaw -"
+  ];
   system.stateVersion = "25.11";
 }

@@ -27,7 +27,6 @@
       "anthropic/claude-opus-4-6"
       "anthropic/claude-haiku-4-5"
       "google/gemini-2.5-flash"
-      "google/imagen-4"
     ];
     availableModels = [
       # Anthropic (Claude Code sub — use freely)
@@ -47,6 +46,14 @@
       "anthropic/claude-sonnet-4-6"                        = "sonnet";
       "anthropic/claude-opus-4-6"                          = "opus";
       "anthropic/claude-haiku-4-5"                         = "haiku";
+      # Google
+      "google/gemini-2.5-flash"                            = "gemini-flash";
+      # xAI
+      "x-ai/grok-4.20-0309-non-reasoning"                  = "grok";
+      "x-ai/grok-4.20-0309-reasoning"                      = "grok-think";
+      "x-ai/grok-4.20-multi-agent-0309"                    = "grok-multi";
+      "x-ai/grok-4-1-fast-non-reasoning"                   = "grok-fast";
+      "x-ai/grok-4-1-fast-reasoning"                       = "grok-fast-think";
       # OpenRouter — cost-optimized background/subagent models (no China)
       "openrouter/meta-llama/llama-4-scout"                = "llama-scout";       # $0.08/1M — Llama 4, 327k ctx, multimodal, cheapest capable worker (Meta/US)
       "openrouter/google/gemini-2.5-flash-lite"            = "gemini-flash-lite"; # $0.10/1M — 1M ctx, full multimodal (audio/video/image), tools (Google/US)
@@ -57,5 +64,14 @@
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];
   };
+  # Startup performance optimizations (recommended by openclaw doctor)
+  systemd.services.openclaw-gateway.environment = {
+    NODE_COMPILE_CACHE = "/var/tmp/openclaw-compile-cache";
+    OPENCLAW_NO_RESPAWN = "1";
+  };
+  systemd.tmpfiles.rules = [
+    "d /var/tmp/openclaw-compile-cache 0755 openclaw openclaw -"
+  ];
+
   system.stateVersion = "25.11";
 }

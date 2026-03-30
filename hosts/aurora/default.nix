@@ -23,7 +23,7 @@
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     userName = "Connie";
     primaryModel = "google/gemini-2.5-flash";
-    fallbackModels = [ "google/gemini-2.5-flash-lite" "google/imagen-4" ];
+    fallbackModels = [ "openrouter/deepseek/deepseek-v3.2" "google/gemini-2.5-flash-lite" ];
     availableModels = [
       # Google (direct — default voice, warm and conversational)
       "google/gemini-2.5-flash"
@@ -39,10 +39,19 @@
       "openrouter/qwen/qwen3-235b-a22b-thinking-2507"    = "qwen-think";        # $0.15/$1.50 — Deep reasoning. Use sparingly (output is pricey).
       "openrouter/mistralai/mistral-small-2603"          = "mistral-small";     # $0.15/1M — creative writing, narrative, storytelling (French sensibility)
     };
+    toolsAllow = [ "cron" ];  # Allow Aurora to manage her own cron jobs
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];
     telegram.enable = true;
     telegram.allowFrom = [ "8580758213" "5201076941" ];
   };
+  # Startup performance optimizations (recommended by openclaw doctor)
+  systemd.services.openclaw-gateway.environment = {
+    NODE_COMPILE_CACHE = "/var/tmp/openclaw-compile-cache";
+    OPENCLAW_NO_RESPAWN = "1";
+  };
+  systemd.tmpfiles.rules = [
+    "d /var/tmp/openclaw-compile-cache 0755 openclaw openclaw -"
+  ];
   system.stateVersion = "25.11";
 }
