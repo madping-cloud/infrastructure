@@ -25,7 +25,7 @@ PERSONALITIES_REPO="https://github.com/madping-cloud/personalities.git"
 PERSONALITIES_DIR="/tmp/personalities-sync"
 HOSTNAME=$(hostname)
 MACHINE_FILE="$REPO_DIR/machines/${HOSTNAME}.yaml"
-MANAGED_PERSONALITY_FILES=("SOUL.md" "IDENTITY.md" "AGENTS.md" "USER.md" "TOOLS.md")
+MANAGED_PERSONALITY_FILES=("SOUL.md" "IDENTITY.md")
 WORKSPACE="/var/lib/openclaw/workspace"
 
 CONTAINER_NAME=""
