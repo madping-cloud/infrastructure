@@ -17,34 +17,64 @@
   sops.secrets.google_ai_api_key   = { sopsFile = "/etc/nixos/secrets/${host}/rune.yaml"; key = "google_ai_api_key"; };
   sops.secrets.groq_api_key        = { sopsFile = "/etc/nixos/secrets/${host}/rune.yaml"; key = "groq_api_key"; };
   sops.secrets.openrouter_api_key  = { sopsFile = "/etc/nixos/secrets/${host}/rune.yaml"; key = "openrouter_api_key"; };
+  sops.secrets.xai_api_key         = { sopsFile = "/etc/nixos/secrets/${host}/rune.yaml"; key = "xai_api_key"; };
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     userName = "Marc";
-    # Personality work is creative-editorial, not deep-reasoning.
-    # Sonnet handles it well and is on the Claude Code subscription.
     primaryModel = "anthropic/claude-sonnet-4-6";
     fallbackModels = [
       "anthropic/claude-opus-4-6"
       "anthropic/claude-haiku-4-5"
+      "google/gemini-2.5-flash"
       "openrouter/meta-llama/llama-4-scout"
     ];
     availableModels = [
+      # Anthropic (Claude Code sub)
       "anthropic/claude-sonnet-4-6"
       "anthropic/claude-opus-4-6"
       "anthropic/claude-haiku-4-5"
+      # Google
+      "google/gemini-2.5-flash"
+      "google/gemini-2.5-flash-lite"
+      # xAI
+      "x-ai/grok-4.20-0309-reasoning"
+      "x-ai/grok-4.20-0309-non-reasoning"
+      "x-ai/grok-4-1-fast-reasoning"
+      "x-ai/grok-4-1-fast-non-reasoning"
+      # OpenRouter
       "openrouter/meta-llama/llama-4-scout"
       "openrouter/google/gemini-2.5-flash-lite"
       "openrouter/meta-llama/llama-4-maverick"
       "openrouter/mistralai/mistral-small-2603"
+      "openrouter/inception/mercury-2"
+      "openrouter/deepseek/deepseek-v3.2"
     ];
     modelAliases = {
-      "anthropic/claude-sonnet-4-6"             = "sonnet";
-      "anthropic/claude-opus-4-6"               = "opus";
-      "anthropic/claude-haiku-4-5"              = "haiku";
-      "openrouter/meta-llama/llama-4-scout"     = "llama-scout";
-      "openrouter/google/gemini-2.5-flash-lite" = "gemini-flash-lite";
-      "openrouter/meta-llama/llama-4-maverick"  = "llama-maverick";
-      "openrouter/mistralai/mistral-small-2603" = "mistral-small";
+      "anthropic/claude-sonnet-4-6"                      = "sonnet";
+      "anthropic/claude-opus-4-6"                        = "opus";
+      "anthropic/claude-haiku-4-5"                       = "haiku";
+      "google/gemini-2.5-flash"                          = "gemini-flash";
+      "google/gemini-2.5-flash-lite"                     = "gemini-flash-lite-direct";
+      "x-ai/grok-4.20-0309-reasoning"                    = "grok-think";
+      "x-ai/grok-4.20-0309-non-reasoning"                = "grok";
+      "x-ai/grok-4-1-fast-reasoning"                     = "grok-fast-think";
+      "x-ai/grok-4-1-fast-non-reasoning"                 = "grok-fast";
+      "openrouter/meta-llama/llama-4-scout"              = "llama-scout";
+      "openrouter/google/gemini-2.5-flash-lite"          = "gemini-flash-lite";
+      "openrouter/meta-llama/llama-4-maverick"           = "llama-maverick";
+      "openrouter/mistralai/mistral-small-2603"          = "mistral-small";
+      "openrouter/inception/mercury-2"                   = "mercury";
+      "openrouter/deepseek/deepseek-v3.2"                = "deepseek-v3";
+    };
+    customModelProviders.xai = {
+      baseUrl = "https://api.x.ai/v1";
+      api = "openai-responses";
+      models = [
+        { id = "grok-4.20-0309-reasoning"; name = "Grok 4.20 (Reasoning)"; reasoning = true; input = [ "text" "image" ]; cost = { input = 2; output = 6; cacheRead = 0.2; cacheWrite = 0; }; contextWindow = 2000000; maxTokens = 30000; }
+        { id = "grok-4.20-0309-non-reasoning"; name = "Grok 4.20 (Non-Reasoning)"; reasoning = false; input = [ "text" "image" ]; cost = { input = 2; output = 6; cacheRead = 0.2; cacheWrite = 0; }; contextWindow = 2000000; maxTokens = 30000; }
+        { id = "grok-4-1-fast-reasoning"; name = "Grok 4.1 Fast (Reasoning)"; reasoning = true; input = [ "text" "image" ]; cost = { input = 0.2; output = 0.5; cacheRead = 0.05; cacheWrite = 0; }; contextWindow = 2000000; maxTokens = 30000; }
+        { id = "grok-4-1-fast-non-reasoning"; name = "Grok 4.1 Fast (Non-Reasoning)"; reasoning = false; input = [ "text" "image" ]; cost = { input = 0.2; output = 0.5; cacheRead = 0.05; cacheWrite = 0; }; contextWindow = 2000000; maxTokens = 30000; }
+      ];
     };
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];
