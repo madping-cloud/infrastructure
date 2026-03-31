@@ -21,6 +21,7 @@
   sops.secrets.xai_api_key         = { sopsFile = "/etc/nixos/secrets/${host}/rune.yaml"; key = "xai_api_key"; };
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
+    gateway.allowedOrigins = [ "http://192.168.4.6" "http://10.100.0.1" ];
     userName = "Marc";
     primaryModel = "anthropic/claude-sonnet-4-6";
     fallbackModels = [
