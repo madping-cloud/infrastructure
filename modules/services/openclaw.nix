@@ -44,6 +44,7 @@ let
       mode = cfg.gateway.mode;
       bind = cfg.gateway.bind;
       auth.mode = "token";
+      trustedProxies = [ "127.0.0.1" ];
       nodes.denyCommands = cfg.gateway.denyCommands;
     } // (lib.optionalAttrs (cfg.gateway.allowedOrigins != []) {
       controlUi.allowedOrigins = cfg.gateway.allowedOrigins;
