@@ -22,7 +22,7 @@
   sops.secrets.xai_api_key         = { sopsFile = "/etc/nixos/secrets/${host}/mira.yaml"; key = "xai_api_key"; };
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
-    gateway.allowedOrigins = [ "http://192.168.4.6" "http://192.168.4.6:18004" "http://10.100.0.1" "http://10.100.0.1:18004" ];
+    gateway.allowedOrigins = [ "https://192.168.4.6" "https://192.168.4.6:18004" "https://10.100.0.1" "https://10.100.0.1:18004" ];
     userName = "Marc";
     primaryModel = "xai/grok-4.20-0309-reasoning";
     fallbackModels = [ "google/gemini-2.5-flash" ];
