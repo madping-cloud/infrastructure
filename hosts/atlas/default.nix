@@ -21,7 +21,7 @@
   sops.secrets.openrouter_api_key  = { sopsFile = "/etc/nixos/secrets/${host}/atlas.yaml"; key = "openrouter_api_key"; };
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
-    gateway.allowedOrigins = [ "http://192.168.4.6" "http://192.168.4.6:18002" "http://10.100.0.1" "http://10.100.0.1:18002" ];
+    gateway.allowedOrigins = [ "https://192.168.4.6" "https://192.168.4.6:18002" "https://10.100.0.1" "https://10.100.0.1:18002" ];
     userName = "Marc";
     primaryModel = "google/gemini-2.5-flash";
     fallbackModels = [
