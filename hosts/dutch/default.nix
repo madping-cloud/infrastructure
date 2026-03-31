@@ -23,28 +23,30 @@
     tools.agentToAgent = true;
     gateway.httpToolsAllow = [ "sessions_send" ];
     userName = "Marc";
-    primaryModel = "openrouter/deepseek/deepseek-v3.2";
+    primaryModel = "anthropic/claude-sonnet-4-6";
     fallbackModels = [
-      "openrouter/meta-llama/llama-4-scout"
-      "openrouter/google/gemini-2.5-flash-lite"
+      "anthropic/claude-haiku-4-5"
+      "google/gemini-2.5-flash"
     ];
     availableModels = [
+      "anthropic/claude-sonnet-4-6"
+      "anthropic/claude-haiku-4-5"
+      "google/gemini-2.5-flash"
       "openrouter/deepseek/deepseek-v3.2"
       "openrouter/meta-llama/llama-4-scout"
-      "openrouter/google/gemini-2.5-flash-lite"
       "openrouter/meta-llama/llama-4-maverick"
       "openrouter/mistralai/mistral-small-2603"
       "openrouter/inception/mercury-2"
-      "openrouter/google/gemini-2.5-flash"
     ];
     modelAliases = {
+      "anthropic/claude-sonnet-4-6"                     = "sonnet";
+      "anthropic/claude-haiku-4-5"                      = "haiku";
+      "google/gemini-2.5-flash"                         = "gemini-flash";
       "openrouter/deepseek/deepseek-v3.2"               = "deepseek-v3";
       "openrouter/meta-llama/llama-4-scout"             = "llama-scout";
-      "openrouter/google/gemini-2.5-flash-lite"         = "gemini-flash-lite";
       "openrouter/meta-llama/llama-4-maverick"          = "llama-maverick";
       "openrouter/mistralai/mistral-small-2603"         = "mistral-small";
       "openrouter/inception/mercury-2"                  = "mercury";
-      "openrouter/google/gemini-2.5-flash"              = "gemini-flash";
     };
     webSearch.provider = "tavily";
     webSearch.tavily.enable = true;
