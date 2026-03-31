@@ -14,6 +14,7 @@
   sops.secrets.shared_vast_api_key       = { sopsFile = "/etc/nixos/secrets/${host}/shared.yaml"; key = "vast_api_key"; };
   # Container-specific secrets
   sops.secrets.gateway_token = { sopsFile = "/etc/nixos/secrets/${host}/leaddev.yaml"; key = "gateway_token"; };
+  sops.secrets.discord_token = { sopsFile = "/etc/nixos/secrets/${host}/leaddev.yaml"; key = "discord_token"; };
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     gateway.allowedOrigins = [ "https://192.168.4.6" "https://192.168.4.6:18009" "https://10.100.0.1" "https://10.100.0.1:18009" ];
@@ -46,6 +47,8 @@
       "openrouter/meta-llama/llama-4-scout"      = "llama-scout";     # $0.08/1M — cheapest worker
     };
     # No webSearch — internal coding agent
+    discord.enable = true;
+    discord.allowFrom = [ "166609345080066048" ];
   };
   # Startup performance optimizations
   systemd.services.openclaw-gateway.environment = {

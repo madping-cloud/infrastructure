@@ -15,6 +15,7 @@
   # Container-specific secrets
   sops.secrets.gateway_token  = { sopsFile = "/etc/nixos/secrets/${host}/cso.yaml"; key = "gateway_token"; };
   sops.secrets.tavily_api_key = { sopsFile = "/etc/nixos/secrets/${host}/cso.yaml"; key = "tavily_api_key"; };
+  sops.secrets.discord_token  = { sopsFile = "/etc/nixos/secrets/${host}/cso.yaml"; key = "discord_token"; };
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     gateway.allowedOrigins = [ "https://192.168.4.6" "https://192.168.4.6:18008" "https://10.100.0.1" "https://10.100.0.1:18008" ];
@@ -51,6 +52,8 @@
     };
     webSearch.provider = "tavily";
     webSearch.tavily.enable = true;
+    discord.enable = true;
+    discord.allowFrom = [ "166609345080066048" ];
   };
   # Startup performance optimizations
   systemd.services.openclaw-gateway.environment = {
