@@ -24,10 +24,12 @@
     tools.agentToAgent = true;
     gateway.httpToolsAllow = [ "sessions_send" ];
     userName = "Marc";
+    maxConcurrent = 2;
+    subagentsMaxConcurrent = 1;
     primaryModel = "anthropic/claude-haiku-4-5";
     fallbackModels = [
-      "anthropic/claude-sonnet-4-6"
       "openrouter/meta-llama/llama-4-maverick"
+      "openrouter/meta-llama/llama-4-scout"
     ];
     availableModels = [
       # Anthropic (direct — primary, on subscription)

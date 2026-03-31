@@ -9,12 +9,25 @@ Pull-based GitOps infrastructure for NixOS containers on Debian hosts using Incu
 ## Architecture
 
 **Hosts** (Debian + Incus): Thor (10.100.0.1), Loki (planned)
-**Containers** (NixOS 25.11): cole, atlas (on Thor)
+**Containers** (NixOS 25.11 on Thor):
+
+| Agent | Role | Primary Model | Tier |
+|-------|------|---------------|------|
+| cole | Infrastructure agent (Marc's second brain) | sonnet-4-6 | 1 — Anthropic-only |
+| atlas | Coordinator / primary assistant | sonnet-4-6 | 1 — has sessions_spawn |
+| mira | Adult content agent | sonnet-4-6 | 2 |
+| cso | Chief Strategy Officer | sonnet-4-6 | 2 |
+| leaddev | Lead Developer | sonnet-4-6 | 2 |
+| dutch | Cannabis knowledge agent | sonnet-4-6 | 2 |
+| harlan | Microsoft MXDR specialist | sonnet-4-6 | 2 |
+| rune | General-purpose + xAI | sonnet-4-6 | 2 |
+| siem | Security monitoring | haiku-4-5 | 3 — lightweight |
+| aurora | Companion agent (Connie) | gemini-flash | 3 — non-Anthropic |
 
 Every container's NixOS config is built from a module stack applied by `lib/default.nix`'s `mkAgent` helper:
 1. `sops-nix` — secret decryption
 2. `modules/common/default.nix` — base config (locale, firewall, packages, kernel hardening)
-3. `modules/services/openclaw.nix` — OpenClaw AI agent service (361 lines, the core module)
+3. `modules/services/openclaw.nix` — OpenClaw AI agent service (core module)
 4. `hosts/<name>/default.nix` — per-agent config (models, channels, allowlists)
 
 Container-to-host mapping lives in `machines/<hostname>.yaml`. The flake defines `nixosConfigurations` entries using `mkAgent`.
@@ -33,10 +46,13 @@ Container-to-host mapping lives in `machines/<hostname>.yaml`. The flake defines
 ## Common Commands
 
 ```bash
-# Manual deploy (run on the host as root)
+# Manual deploy (run on Thor as root)
 ./scripts/deploy.sh cole              # single container
 ./scripts/deploy.sh --all             # all containers on this host
 ./scripts/deploy.sh cole --build-only # dry run
+
+# Deploy via SSH from local machine
+ssh root@192.168.4.6 'cd /opt/infrastructure && git pull --ff-only && ./scripts/deploy.sh --all'
 
 # Trigger the gitops timer manually
 systemctl start gitops-pull
@@ -53,9 +69,24 @@ sops secrets/thor/shared.yaml
 # Add a new container (creates config, flake entry, secrets, launches it)
 ./scripts/add-container.sh <name>
 
+# Push personality files to a container
+./scripts/provision-agent.sh <name>
+
 # Enter dev shell (installs git, sops, age, jq, nixos-rebuild + pre-commit hook)
 nix develop
 ```
+
+## Inter-Agent Communication
+
+Agents communicate via gateway-to-gateway HTTP using a shared `peer_gateway_token`. Each agent gets `/run/openclaw-peers.json` with peer URLs at deploy time.
+
+**Required per-agent config for inter-agent comms:**
+- `gateway.bind = "lan"` — bind to network interface
+- `tools.sessionsVisibility = "all"` — see all sessions
+- `tools.agentToAgent = true` — enable cross-agent targeting
+- `gateway.httpToolsAllow = [ "sessions_send" ]` — allow inbound session messages
+
+Atlas is the coordinator and additionally has `sessions_spawn` capability.
 
 ## Secrets
 
@@ -69,6 +100,14 @@ Per-container keys override shared keys when both exist. The `openclaw.nix` modu
 
 A pre-commit hook (auto-installed by `nix develop`) blocks committing unencrypted secrets.
 
+## Personalities
+
+Agent personality files (SOUL.md, IDENTITY.md, AGENTS.md, USER.md, TOOLS.md) live in a separate repo: `github.com/madping-cloud/personalities`. Structure: `agents/<name>/{SOUL,IDENTITY,AGENTS,USER,TOOLS}.md`. Push via `scripts/provision-agent.sh` or manually.
+
+## Known Issues
+
+**OpenClaw crash loop on rate limit:** When Anthropic rate limits hit, OpenClaw's "live session model switch" pins the session to the failing model, overriding all fallback attempts — creating an infinite retry loop. **Recovery:** Stop gateway, clear sessions (`rm -f /var/lib/openclaw/sessions/*.jsonl`), restart gateway. **Prevention:** Keep concurrency low, use haiku as first fallback (not opus), include non-Anthropic models in fallback chain.
+
 ## Key Conventions
 
 - All deploys are **fast-forward only** — keep master linear
@@ -76,3 +115,4 @@ A pre-commit hook (auto-installed by `nix develop`) blocks committing unencrypte
 - Nix sandbox is disabled (LXC incompatibility)
 - OpenClaw config is fully declarative via `services.openclaw.*` options in host configs — the module regenerates `openclaw.json` from scratch on every deploy
 - Structured logging format: `level= action= host= msg= key=value`
+- All agents share ONE Anthropic subscription — be mindful of rate limits across the fleet

@@ -28,9 +28,11 @@
     tools.agentToAgent = true;
     gateway.httpToolsAllow = [ "sessions_send" "sessions_spawn" ];
     userName = "Marc";
+    maxConcurrent = 3;
+    subagentsMaxConcurrent = 6;
     primaryModel = "anthropic/claude-sonnet-4-6";
     fallbackModels = [
-      "anthropic/claude-opus-4-6"
+      "anthropic/claude-haiku-4-5"
       "google/gemini-2.5-pro"
       "openai/gpt-4o"
     ];

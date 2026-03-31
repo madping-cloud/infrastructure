@@ -22,3 +22,5 @@ containers:
     flake_target: dutch
   - name: harlan
     flake_target: harlan
+  - name: rune
+    flake_target: rune

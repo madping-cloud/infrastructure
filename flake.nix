@@ -93,6 +93,12 @@
         name       = "harlan";
         hostModule = ./hosts/harlan/default.nix;
       };
+
+      # Rune — general-purpose agent with xAI integration
+      rune = mkAgent {
+        name       = "rune";
+        hostModule = ./hosts/rune/default.nix;
+      };
     };
 
     # ── Dev Shell ─────────────────────────────────────────────────────────────

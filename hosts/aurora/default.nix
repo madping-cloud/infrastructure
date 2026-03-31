@@ -28,6 +28,8 @@
     tools.agentToAgent = true;
     gateway.httpToolsAllow = [ "sessions_send" ];
     userName = "Connie";
+    maxConcurrent = 2;
+    subagentsMaxConcurrent = 2;
     primaryModel = "google/gemini-2.5-flash";
     fallbackModels = [ "openrouter/deepseek/deepseek-v3.2" "google/gemini-2.5-flash-lite" ];
     availableModels = [

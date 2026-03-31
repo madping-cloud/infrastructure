@@ -24,11 +24,12 @@
   sops.secrets.xai_api_key         = { sopsFile = "/etc/nixos/secrets/${host}/cole.yaml"; key = "xai_api_key"; };
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
+    maxConcurrent = 3;
+    subagentsMaxConcurrent = 4;
     primaryModel = "anthropic/claude-sonnet-4-6";
     fallbackModels = [
       "anthropic/claude-opus-4-6"
       "anthropic/claude-haiku-4-5"
-      "google/gemini-2.5-flash"
     ];
     availableModels = [
       # Anthropic (Claude Code sub — use freely)

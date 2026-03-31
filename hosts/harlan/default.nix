@@ -23,8 +23,13 @@
     tools.agentToAgent = true;
     gateway.httpToolsAllow = [ "sessions_send" ];
     userName = "Marc";
+    maxConcurrent = 2;
+    subagentsMaxConcurrent = 2;
     primaryModel = "anthropic/claude-sonnet-4-6";
-    fallbackModels = [ "anthropic/claude-opus-4-6" ];
+    fallbackModels = [
+      "anthropic/claude-haiku-4-5"
+      "google/gemini-2.5-flash"
+    ];
     availableModels = [
       "anthropic/claude-sonnet-4-6"
       "anthropic/claude-opus-4-6"

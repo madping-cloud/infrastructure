@@ -18,8 +18,8 @@ let
       models = availableModelsAttr;
       workspace = cfg.workDir;
       compaction.mode = "safeguard";
-      maxConcurrent = 4;
-      subagents.maxConcurrent = 8;
+      maxConcurrent = cfg.maxConcurrent;
+      subagents.maxConcurrent = cfg.subagentsMaxConcurrent;
     };
     tools = {
       web = {
@@ -105,6 +105,18 @@ in
     deployPersonalityFiles = lib.mkOption { type = lib.types.bool; default = true; };
     userName = lib.mkOption { type = lib.types.str; default = "Marc"; };
     version = lib.mkOption { type = lib.types.str; default = "latest"; };
+
+    # ── Concurrency options ────────────────────────────────────────────────────
+    maxConcurrent = lib.mkOption {
+      type = lib.types.int;
+      default = 4;
+      description = "Max concurrent conversations (agents.defaults.maxConcurrent)";
+    };
+    subagentsMaxConcurrent = lib.mkOption {
+      type = lib.types.int;
+      default = 8;
+      description = "Max concurrent subagent sessions (agents.defaults.subagents.maxConcurrent)";
+    };
 
     # ── Model options ──────────────────────────────────────────────────────────
     primaryModel = lib.mkOption { type = lib.types.str; default = "google/gemini-2.5-flash"; };
@@ -194,6 +206,21 @@ in
       default = true;
       description = "Write /run/openclaw-peers.json with peer connection info.";
     };
+    peers.roster = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
+      default = {
+        cole    = "http://10.100.0.186:18789";
+        atlas   = "http://10.100.0.188:18789";
+        aurora  = "http://10.100.0.158:18789";
+        mira    = "http://10.100.0.125:18789";
+        cso     = "http://10.100.0.211:18789";
+        leaddev = "http://10.100.0.20:18789";
+        siem    = "http://10.100.0.173:18789";
+        dutch   = "http://10.100.0.216:18789";
+        harlan  = "http://10.100.0.68:18789";
+      };
+      description = "Map of peer agent names to gateway URLs. Token is injected at runtime from shared_peer_gateway_token secret.";
+    };
 
     # ── Web search options ─────────────────────────────────────────────────────
     webSearch.provider = lib.mkOption { type = lib.types.str; default = "duckduckgo"; };
@@ -237,29 +264,24 @@ SHELLRC
     ''; deps = []; };
 
     # ── Peer config (inter-agent comms) ─────────────────────────────────────
-    system.activationScripts.openclawPeerConfig = lib.mkIf cfg.peers.enable { text = ''
-      PEERS_FILE="/run/openclaw-peers.json"
-      PEER_TOKEN=$(cat /run/secrets/shared_peer_gateway_token 2>/dev/null || echo "")
-      if [ -n "$PEER_TOKEN" ]; then
-        cat > "$PEERS_FILE" <<PEERJSON
-{
-  "peers": {
-    "cole":   { "url": "http://10.100.0.186:18789", "token": "$PEER_TOKEN" },
-    "atlas":  { "url": "http://10.100.0.188:18789", "token": "$PEER_TOKEN" },
-    "aurora": { "url": "http://10.100.0.158:18789", "token": "$PEER_TOKEN" },
-    "mira":   { "url": "http://10.100.0.125:18789", "token": "$PEER_TOKEN" },
-    "reid":   { "url": "http://10.100.0.211:18789", "token": "$PEER_TOKEN" },
-    "eli":    { "url": "http://10.100.0.20:18789",  "token": "$PEER_TOKEN" },
-    "morgan": { "url": "http://10.100.0.173:18789", "token": "$PEER_TOKEN" },
-    "dutch":  { "url": "http://10.100.0.216:18789", "token": "$PEER_TOKEN" },
-    "harlan": { "url": "http://10.100.0.68:18789",  "token": "$PEER_TOKEN" }
-  }
-}
-PEERJSON
-        chmod 640 "$PEERS_FILE"
-        chown openclaw:openclaw "$PEERS_FILE" 2>/dev/null || true
-      fi
-    ''; deps = [ "setupSecrets" ]; };
+    system.activationScripts.openclawPeerConfig = lib.mkIf (cfg.peers.enable && cfg.peers.roster != {}) {
+      text = let
+        # Build roster JSON at eval time with placeholder token; token is injected at runtime
+        rosterJson = builtins.toJSON {
+          peers = lib.mapAttrs (_name: url: { inherit url; token = "__PEER_TOKEN__"; }) cfg.peers.roster;
+        };
+      in ''
+        PEERS_FILE="/run/openclaw-peers.json"
+        PEER_TOKEN=$(cat /run/secrets/shared_peer_gateway_token 2>/dev/null || echo "")
+        if [ -n "$PEER_TOKEN" ]; then
+          echo '${rosterJson}' | ${jqBin} --arg token "$PEER_TOKEN" \
+            '.peers |= with_entries(.value.token = $token)' > "$PEERS_FILE"
+          chmod 640 "$PEERS_FILE"
+          chown openclaw:openclaw "$PEERS_FILE" 2>/dev/null || true
+        fi
+      '';
+      deps = [ "setupSecrets" ];
+    };
 
     # ── Environment file (API keys) ──────────────────────────────────────────
     system.activationScripts.openclawEnv = { text = ''

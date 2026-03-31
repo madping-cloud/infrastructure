@@ -24,9 +24,11 @@
     tools.agentToAgent = true;
     gateway.httpToolsAllow = [ "sessions_send" ];
     userName = "Marc";
+    maxConcurrent = 2;
+    subagentsMaxConcurrent = 3;
     primaryModel = "anthropic/claude-sonnet-4-6";
     fallbackModels = [
-      "anthropic/claude-opus-4-6"
+      "anthropic/claude-haiku-4-5"
       "openai/gpt-4o"
       "openrouter/mistralai/codestral-2501"
     ];
