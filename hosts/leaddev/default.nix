@@ -55,7 +55,7 @@
   systemd.tmpfiles.rules = [
     "d /var/tmp/openclaw-compile-cache 0755 openclaw openclaw -"
   ];
-  environment.systemPackages = with pkgs; [ socat ];
+  environment.systemPackages = with pkgs; [ socat gh git ];
 
   # OpenClaw GUI bridge — expose port 18790 for nginx reverse proxy on Thor
   systemd.services.openclaw-bridge = {
