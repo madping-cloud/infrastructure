@@ -12,12 +12,14 @@
   sops.secrets.shared_groq_api_key       = { sopsFile = "/etc/nixos/secrets/${host}/shared.yaml"; key = "groq_api_key"; };
   sops.secrets.shared_openrouter_api_key = { sopsFile = "/etc/nixos/secrets/${host}/shared.yaml"; key = "openrouter_api_key"; };
   sops.secrets.shared_vast_api_key       = { sopsFile = "/etc/nixos/secrets/${host}/shared.yaml"; key = "vast_api_key"; };
+  sops.secrets.shared_peer_gateway_token = { sopsFile = "/etc/nixos/secrets/${host}/shared.yaml"; key = "peer_gateway_token"; };
   # Container-specific secrets
   sops.secrets.gateway_token = { sopsFile = "/etc/nixos/secrets/${host}/leaddev.yaml"; key = "gateway_token"; };
   sops.secrets.discord_token = { sopsFile = "/etc/nixos/secrets/${host}/leaddev.yaml"; key = "discord_token"; };
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     gateway.allowedOrigins = [ "https://192.168.4.6" "https://192.168.4.6:18009" "https://10.100.0.1" "https://10.100.0.1:18009" ];
+    gateway.httpToolsAllow = [ "sessions_send" ];
     userName = "Marc";
     primaryModel = "anthropic/claude-sonnet-4-6";
     fallbackModels = [
@@ -73,5 +75,9 @@
   };
 
   networking.firewall.allowedTCPPorts = [ 18790 ];
+  networking.firewall.extraInputRules = ''
+    ip saddr 10.100.0.0/24 tcp dport 18789 accept
+    tcp dport 18789 drop
+  '';
   system.stateVersion = "25.11";
 }

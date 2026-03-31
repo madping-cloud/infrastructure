@@ -59,6 +59,8 @@ let
       nodes.denyCommands = cfg.gateway.denyCommands;
     } // (lib.optionalAttrs (cfg.gateway.allowedOrigins != []) {
       controlUi.allowedOrigins = cfg.gateway.allowedOrigins;
+    }) // (lib.optionalAttrs (cfg.gateway.httpToolsAllow != []) {
+      tools.allow = cfg.gateway.httpToolsAllow;
     });
     plugins.entries.duckduckgo.enabled = true;
     plugins.entries.tavily.enabled = cfg.webSearch.tavily.enable;
@@ -182,6 +184,18 @@ in
       description = "Allowed origins for the Control UI (gateway.controlUi.allowedOrigins).";
     };
 
+    # ── Inter-agent comms options ──────────────────────────────────────────────────
+    gateway.httpToolsAllow = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [];
+      description = "Tools to allow over HTTP /tools/invoke (removes from default deny list).";
+    };
+    peers.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Write /run/openclaw-peers.json with peer connection info.";
+    };
+
     # ── Web search options ─────────────────────────────────────────────────────
     webSearch.provider = lib.mkOption { type = lib.types.str; default = "duckduckgo"; };
     webSearch.tavily.enable = lib.mkOption { type = lib.types.bool; default = false; };
@@ -222,6 +236,31 @@ SHELLRC
       chown openclaw:openclaw "$CONFIG"
       chmod 600 "$CONFIG"
     ''; deps = []; };
+
+    # ── Peer config (inter-agent comms) ─────────────────────────────────────
+    system.activationScripts.openclawPeerConfig = lib.mkIf cfg.peers.enable { text = ''
+      PEERS_FILE="/run/openclaw-peers.json"
+      PEER_TOKEN=$(cat /run/secrets/shared_peer_gateway_token 2>/dev/null || echo "")
+      if [ -n "$PEER_TOKEN" ]; then
+        cat > "$PEERS_FILE" <<PEERJSON
+{
+  "peers": {
+    "cole":   { "url": "http://10.100.0.186:18789", "token": "$PEER_TOKEN" },
+    "atlas":  { "url": "http://10.100.0.188:18789", "token": "$PEER_TOKEN" },
+    "aurora": { "url": "http://10.100.0.158:18789", "token": "$PEER_TOKEN" },
+    "mira":   { "url": "http://10.100.0.125:18789", "token": "$PEER_TOKEN" },
+    "reid":   { "url": "http://10.100.0.211:18789", "token": "$PEER_TOKEN" },
+    "eli":    { "url": "http://10.100.0.20:18789",  "token": "$PEER_TOKEN" },
+    "morgan": { "url": "http://10.100.0.173:18789", "token": "$PEER_TOKEN" },
+    "dutch":  { "url": "http://10.100.0.216:18789", "token": "$PEER_TOKEN" },
+    "harlan": { "url": "http://10.100.0.68:18789",  "token": "$PEER_TOKEN" }
+  }
+}
+PEERJSON
+        chmod 640 "$PEERS_FILE"
+        chown openclaw:openclaw "$PEERS_FILE" 2>/dev/null || true
+      fi
+    ''; deps = [ "setupSecrets" ]; };
 
     # ── Environment file (API keys) ──────────────────────────────────────────
     system.activationScripts.openclawEnv = { text = ''
