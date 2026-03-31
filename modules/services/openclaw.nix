@@ -10,20 +10,6 @@ let
     // (builtins.mapAttrs (model: alias: { alias = alias; }) cfg.modelAliases);
   baseConfig = {
     meta = {};
-    auth = {
-      profiles = {
-        "anthropic:default"   = { provider = "anthropic";   mode = "api_key"; };
-        "google:default"      = { provider = "google";      mode = "api_key"; };
-        "openrouter:default"  = { provider = "openrouter";  mode = "api_key"; };
-        "xai:default"         = { provider = "xai";         mode = "api_key"; };
-      };
-      order = {
-        anthropic  = [ "anthropic:default" ];
-        google     = [ "google:default" ];
-        openrouter = [ "openrouter:default" ];
-        xai        = [ "xai:default" ];
-      };
-    };
     agents.defaults = {
       model = {
         primary = cfg.primaryModel;
