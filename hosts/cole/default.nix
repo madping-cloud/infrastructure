@@ -67,6 +67,7 @@
     telegram.enable = true;
     telegram.dmPolicy = "allowlist";
     telegram.allowFrom = [ "5201076941" ];
+    gateway.allowedOrigins = [ "http://192.168.4.6" "http://10.100.0.1" ];
     webSearch.provider = "tavily";
     webSearch.tavily.enable = true;
   };

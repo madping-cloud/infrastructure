@@ -57,7 +57,9 @@ let
       bind = cfg.gateway.bind;
       auth.mode = "token";
       nodes.denyCommands = cfg.gateway.denyCommands;
-    };
+    } // (lib.optionalAttrs (cfg.gateway.allowedOrigins != []) {
+      controlUi.allowedOrigins = cfg.gateway.allowedOrigins;
+    });
     plugins.entries.duckduckgo.enabled = true;
     plugins.entries.tavily.enabled = cfg.webSearch.tavily.enable;
   };
@@ -173,6 +175,11 @@ in
     gateway.denyCommands = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ "camera.snap" "camera.clip" "screen.record" "contacts.add" "calendar.add" "reminders.add" "sms.send" ];
+    };
+    gateway.allowedOrigins = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [];
+      description = "Allowed origins for the Control UI (gateway.controlUi.allowedOrigins).";
     };
 
     # ── Web search options ─────────────────────────────────────────────────────
