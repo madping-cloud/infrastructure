@@ -16,7 +16,7 @@
   sops.secrets.gateway_token       = { sopsFile = "/etc/nixos/secrets/${host}/harlan.yaml"; key = "gateway_token"; };
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
-    gateway.allowedOrigins = [ "http://192.168.4.6" "http://10.100.0.1" ];
+    gateway.allowedOrigins = [ "http://192.168.4.6" "http://192.168.4.6:18007" "http://10.100.0.1" "http://10.100.0.1:18007" ];
     userName = "Marc";
     primaryModel = "anthropic/claude-sonnet-4-6";
     fallbackModels = [ "anthropic/claude-opus-4-6" ];
