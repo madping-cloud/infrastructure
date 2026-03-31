@@ -11,18 +11,13 @@ Pull-based GitOps infrastructure for NixOS containers on Debian hosts using Incu
 **Hosts** (Debian + Incus): Thor (10.100.0.1), Loki (planned)
 **Containers** (NixOS 25.11 on Thor):
 
-| Agent | Role | Primary Model | Tier |
-|-------|------|---------------|------|
-| cole | Infrastructure agent (Marc's second brain) | sonnet-4-6 | 1 — Anthropic-only |
-| atlas | Coordinator / primary assistant | sonnet-4-6 | 1 — has sessions_spawn |
-| mira | Adult content agent | sonnet-4-6 | 2 |
-| cso | Chief Strategy Officer | sonnet-4-6 | 2 |
-| leaddev | Lead Developer | sonnet-4-6 | 2 |
-| dutch | Cannabis knowledge agent | sonnet-4-6 | 2 |
-| harlan | Microsoft MXDR specialist | sonnet-4-6 | 2 |
-| rune | General-purpose + xAI | sonnet-4-6 | 2 |
-| siem | Security monitoring | haiku-4-5 | 3 — lightweight |
-| aurora | Companion agent (Connie) | gemini-flash | 3 — non-Anthropic |
+| Agent | Role | Primary Model | Auth | Tier |
+|-------|------|---------------|------|------|
+| atlas | Coordinator + Exec/SVP team (strategy, MXDR, knowledge) | sonnet-4-6 | Max sub | 1 — sessions_spawn |
+| cole | Infrastructure + Coder team (dev, code review, xAI) | sonnet-4-6 | Max sub | 1 — sessions_spawn |
+| mira | Adult content agent | sonnet-4-6 | Anthropic API | 2 |
+| siem | Security monitoring/analysis | haiku-4-5 | API (haiku) | 3 — lightweight |
+| aurora | Companion agent (Connie) | gemini-flash | Google AI | 3 — non-Anthropic |
 
 Every container's NixOS config is built from a module stack applied by `lib/default.nix`'s `mkAgent` helper:
 1. `sops-nix` — secret decryption
@@ -86,7 +81,7 @@ Agents communicate via gateway-to-gateway HTTP using a shared `peer_gateway_toke
 - `tools.agentToAgent = true` — enable cross-agent targeting
 - `gateway.httpToolsAllow = [ "sessions_send" ]` — allow inbound session messages
 
-Atlas is the coordinator and additionally has `sessions_spawn` capability.
+Atlas and Cole both have `sessions_spawn` capability. Atlas is the exec/SVP coordinator; Cole is the coder team lead.
 
 ## Secrets
 
@@ -115,4 +110,4 @@ Agent personality files (SOUL.md, IDENTITY.md, AGENTS.md, USER.md, TOOLS.md) liv
 - Nix sandbox is disabled (LXC incompatibility)
 - OpenClaw config is fully declarative via `services.openclaw.*` options in host configs — the module regenerates `openclaw.json` from scratch on every deploy
 - Structured logging format: `level= action= host= msg= key=value`
-- All agents share ONE Anthropic subscription — be mindful of rate limits across the fleet
+- Atlas and Cole run on Claude Max subscription; Mira and SIEM use Anthropic API; Aurora uses Google AI

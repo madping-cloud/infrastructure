@@ -20,6 +20,7 @@
   sops.secrets.google_ai_api_key   = { sopsFile = "/etc/nixos/secrets/${host}/atlas.yaml"; key = "google_ai_api_key"; };
   sops.secrets.groq_api_key        = { sopsFile = "/etc/nixos/secrets/${host}/atlas.yaml"; key = "groq_api_key"; };
   sops.secrets.openrouter_api_key  = { sopsFile = "/etc/nixos/secrets/${host}/atlas.yaml"; key = "openrouter_api_key"; };
+  sops.secrets.tavily_api_key      = { sopsFile = "/etc/nixos/secrets/${host}/atlas.yaml"; key = "tavily_api_key"; };
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     gateway.allowedOrigins = [ "https://192.168.4.6" "https://192.168.4.6:18002" "https://10.100.0.1" "https://10.100.0.1:18002" ];
@@ -28,8 +29,8 @@
     tools.agentToAgent = true;
     gateway.httpToolsAllow = [ "sessions_send" "sessions_spawn" ];
     userName = "Marc";
-    maxConcurrent = 3;
-    subagentsMaxConcurrent = 6;
+    maxConcurrent = 4;
+    subagentsMaxConcurrent = 8;
     primaryModel = "anthropic/claude-sonnet-4-6";
     fallbackModels = [
       "anthropic/claude-haiku-4-5"
@@ -37,7 +38,7 @@
       "openai/gpt-4o"
     ];
     availableModels = [
-      # Anthropic (direct — primary, on subscription)
+      # Anthropic (direct — primary, on Max subscription)
       "anthropic/claude-sonnet-4-6"
       "anthropic/claude-opus-4-6"
       "anthropic/claude-haiku-4-5"
@@ -54,6 +55,7 @@
       "openrouter/mistralai/mistral-small-2603"
       "openrouter/inception/mercury-2"
       "openrouter/google/gemini-2.5-flash-lite"
+      "openrouter/deepseek/deepseek-v3.2"
     ];
     modelAliases = {
       "anthropic/claude-sonnet-4-6"             = "sonnet";            # Default — best reasoning, on subscription
@@ -68,7 +70,10 @@
       "openrouter/mistralai/mistral-small-2603" = "mistral-small";     # $0.15/1M — creative/narrative
       "openrouter/inception/mercury-2"          = "mercury";           # $0.25/1M — 1000+ tok/s, text-only
       "openrouter/google/gemini-2.5-flash-lite" = "or-gemini-lite";    # OpenRouter path for Gemini lite
+      "openrouter/deepseek/deepseek-v3.2"       = "deepseek-v3";       # DeepSeek — research/analysis
     };
+    webSearch.provider = "tavily";
+    webSearch.tavily.enable = true;
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];
     discord.threadBindings.enable = true;

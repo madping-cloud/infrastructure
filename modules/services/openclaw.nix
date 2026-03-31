@@ -209,15 +209,11 @@ in
     peers.roster = lib.mkOption {
       type = lib.types.attrsOf lib.types.str;
       default = {
-        cole    = "http://10.100.0.186:18789";
-        atlas   = "http://10.100.0.188:18789";
-        aurora  = "http://10.100.0.158:18789";
-        mira    = "http://10.100.0.125:18789";
-        cso     = "http://10.100.0.211:18789";
-        leaddev = "http://10.100.0.20:18789";
-        siem    = "http://10.100.0.173:18789";
-        dutch   = "http://10.100.0.216:18789";
-        harlan  = "http://10.100.0.68:18789";
+        cole   = "http://10.100.0.186:18789";
+        atlas  = "http://10.100.0.188:18789";
+        aurora = "http://10.100.0.158:18789";
+        mira   = "http://10.100.0.125:18789";
+        siem   = "http://10.100.0.173:18789";
       };
       description = "Map of peer agent names to gateway URLs. Token is injected at runtime from shared_peer_gateway_token secret.";
     };

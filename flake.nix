@@ -56,48 +56,11 @@
         hostModule = ./hosts/mira/default.nix;
       };
 
-      # CSO — Chief Strategy Officer
-      # Business discovery, competitive intelligence, strategic positioning.
-      # Names itself on first run.
-      cso = mkAgent {
-        name       = "cso";
-        hostModule = ./hosts/cso/default.nix;
-      };
-
-      # Lead Dev — Lead Developer
-      # Technical feasibility, architecture, code review, dev standards.
-      # Names itself on first run.
-      leaddev = mkAgent {
-        name       = "leaddev";
-        hostModule = ./hosts/leaddev/default.nix;
-      };
-
       # SIEM — Security Analyst
       # Monitors all agent activity, logs events, flags anomalies, Discord alerts.
-      # Names itself on first run.
       siem = mkAgent {
         name       = "siem";
         hostModule = ./hosts/siem/default.nix;
-      };
-
-      # Dutch — Cannabis knowledge agent
-      # Strain research, terpenes, cultivar recs, market intel. DeepSeek V3.2 primary.
-      dutch = mkAgent {
-        name       = "dutch";
-        hostModule = ./hosts/dutch/default.nix;
-      };
-
-      # Harlan — Microsoft MXDR specialist
-      # MXDR onboarding, Defender stack, Sentinel KQL, alert tuning. Anthropic-only.
-      harlan = mkAgent {
-        name       = "harlan";
-        hostModule = ./hosts/harlan/default.nix;
-      };
-
-      # Rune — general-purpose agent with xAI integration
-      rune = mkAgent {
-        name       = "rune";
-        hostModule = ./hosts/rune/default.nix;
       };
     };
 

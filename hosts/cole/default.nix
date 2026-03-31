@@ -25,47 +25,68 @@
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     maxConcurrent = 3;
-    subagentsMaxConcurrent = 4;
+    subagentsMaxConcurrent = 6;
     primaryModel = "anthropic/claude-sonnet-4-6";
     fallbackModels = [
       "anthropic/claude-opus-4-6"
       "anthropic/claude-haiku-4-5"
     ];
     availableModels = [
-      # Anthropic (Claude Code sub — use freely)
+      # Anthropic (Max sub — use freely)
       "anthropic/claude-haiku-4-5"
       # Google
       "google/gemini-2.5-flash"
+      "google/gemini-2.5-flash-lite"
       "google/imagen-4"
-      # xAI
+      # xAI (absorbed from rune)
       "x-ai/grok-4.20-0309-reasoning"
       "x-ai/grok-4.20-0309-non-reasoning"
       "x-ai/grok-4.20-multi-agent-0309"
       "x-ai/grok-4-1-fast-reasoning"
       "x-ai/grok-4-1-fast-non-reasoning"
+      # OpenRouter — cost-optimized background/subagent models
+      "openrouter/meta-llama/llama-4-scout"
+      "openrouter/google/gemini-2.5-flash-lite"
+      "openrouter/meta-llama/llama-4-maverick"
+      "openrouter/mistralai/mistral-small-2603"
+      "openrouter/inception/mercury-2"
+      "openrouter/deepseek/deepseek-v3.2"
     ];
-    # Models with aliases (used for /model switching and subagent routing)
     modelAliases = {
       "anthropic/claude-sonnet-4-6"                        = "sonnet";
       "anthropic/claude-opus-4-6"                          = "opus";
       "anthropic/claude-haiku-4-5"                         = "haiku";
-      # Google
       "google/gemini-2.5-flash"                            = "gemini-flash";
-      # xAI
+      "google/gemini-2.5-flash-lite"                       = "gemini-flash-lite-direct";
+      # xAI (absorbed from rune)
       "x-ai/grok-4.20-0309-non-reasoning"                  = "grok";
       "x-ai/grok-4.20-0309-reasoning"                      = "grok-think";
       "x-ai/grok-4.20-multi-agent-0309"                    = "grok-multi";
       "x-ai/grok-4-1-fast-non-reasoning"                   = "grok-fast";
       "x-ai/grok-4-1-fast-reasoning"                       = "grok-fast-think";
-      # OpenRouter — cost-optimized background/subagent models (no China)
-      "openrouter/meta-llama/llama-4-scout"                = "llama-scout";       # $0.08/1M — Llama 4, 327k ctx, multimodal, cheapest capable worker (Meta/US)
-      "openrouter/google/gemini-2.5-flash-lite"            = "gemini-flash-lite"; # $0.10/1M — 1M ctx, full multimodal (audio/video/image), tools (Google/US)
-      "openrouter/meta-llama/llama-4-maverick"             = "llama-maverick";    # $0.15/1M — Llama 4 flagship, 1M ctx, multimodal, capable agent (Meta/US)
-      "openrouter/mistralai/mistral-small-2603"            = "mistral-small";     # $0.15/1M — 262k ctx, multimodal, reasoning, creative tasks (Mistral/France)
-      "openrouter/inception/mercury-2"                     = "mercury";           # $0.25/1M — 1000+ tok/s diffusion LLM, speed-critical tasks (Inception/US)
+      # OpenRouter
+      "openrouter/meta-llama/llama-4-scout"                = "llama-scout";       # $0.08/1M — cheapest capable worker
+      "openrouter/google/gemini-2.5-flash-lite"            = "gemini-flash-lite"; # $0.10/1M — 1M ctx, full multimodal
+      "openrouter/meta-llama/llama-4-maverick"             = "llama-maverick";    # $0.15/1M — 1M ctx, capable agent
+      "openrouter/mistralai/mistral-small-2603"            = "mistral-small";     # $0.15/1M — creative/reasoning
+      "openrouter/inception/mercury-2"                     = "mercury";           # $0.25/1M — 1000+ tok/s, speed-critical
+      "openrouter/deepseek/deepseek-v3.2"                  = "deepseek-v3";       # DeepSeek — research/analysis
+    };
+    # xAI custom provider (absorbed from rune)
+    customModelProviders.xai = {
+      baseUrl = "https://api.x.ai/v1";
+      api = "openai-responses";
+      models = [
+        { id = "grok-4.20-0309-reasoning"; name = "Grok 4.20 (Reasoning)"; reasoning = true; input = [ "text" "image" ]; cost = { input = 2; output = 6; cacheRead = 0.2; cacheWrite = 0; }; contextWindow = 2000000; maxTokens = 30000; }
+        { id = "grok-4.20-0309-non-reasoning"; name = "Grok 4.20 (Non-Reasoning)"; reasoning = false; input = [ "text" "image" ]; cost = { input = 2; output = 6; cacheRead = 0.2; cacheWrite = 0; }; contextWindow = 2000000; maxTokens = 30000; }
+        { id = "grok-4.20-multi-agent-0309"; name = "Grok 4.20 Multi-Agent"; reasoning = false; input = [ "text" "image" ]; cost = { input = 2; output = 6; cacheRead = 0.2; cacheWrite = 0; }; contextWindow = 2000000; maxTokens = 30000; }
+        { id = "grok-4-1-fast-reasoning"; name = "Grok 4.1 Fast (Reasoning)"; reasoning = true; input = [ "text" "image" ]; cost = { input = 0.2; output = 0.5; cacheRead = 0.05; cacheWrite = 0; }; contextWindow = 2000000; maxTokens = 30000; }
+        { id = "grok-4-1-fast-non-reasoning"; name = "Grok 4.1 Fast (Non-Reasoning)"; reasoning = false; input = [ "text" "image" ]; cost = { input = 0.2; output = 0.5; cacheRead = 0.05; cacheWrite = 0; }; contextWindow = 2000000; maxTokens = 30000; }
+      ];
     };
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];
+    discord.threadBindings.enable = true;
     telegram.enable = true;
     telegram.dmPolicy = "allowlist";
     telegram.allowFrom = [ "5201076941" ];
@@ -73,7 +94,7 @@
     gateway.bind = "lan";
     tools.sessionsVisibility = "all";
     tools.agentToAgent = true;
-    gateway.httpToolsAllow = [ "sessions_send" ];
+    gateway.httpToolsAllow = [ "sessions_send" "sessions_spawn" ];
     webSearch.provider = "tavily";
     webSearch.tavily.enable = true;
   };

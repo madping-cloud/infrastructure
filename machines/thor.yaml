@@ -12,15 +12,5 @@ containers:
     flake_target: aurora
   - name: mira
     flake_target: mira
-  - name: cso
-    flake_target: cso
-  - name: leaddev
-    flake_target: leaddev
   - name: siem
     flake_target: siem
-  - name: dutch
-    flake_target: dutch
-  - name: harlan
-    flake_target: harlan
-  - name: rune
-    flake_target: rune
