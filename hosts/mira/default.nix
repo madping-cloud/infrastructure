@@ -24,32 +24,29 @@
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     gateway.allowedOrigins = [ "https://192.168.4.6" "https://192.168.4.6:18004" "https://10.100.0.1" "https://10.100.0.1:18004" ];
     userName = "Marc";
-    primaryModel = "xai/grok-4.20-0309-reasoning";
-    fallbackModels = [ "google/gemini-2.5-flash" ];
-    availableModels = [
-      "google/gemini-2.5-flash"
-      "google/imagen-4"
-      "xai/grok-4.20-0309-reasoning"
-      "xai/grok-4.20-0309-non-reasoning"
-      "xai/grok-4-1-fast-reasoning"
-      "xai/grok-4-1-fast-non-reasoning"
+    primaryModel = "anthropic/claude-sonnet-4-6";
+    fallbackModels = [
+      "anthropic/claude-opus-4-6"
+      "google/gemini-2.5-pro"
+      "openrouter/mistralai/mistral-large"
     ];
-    customModelProviders.xai = {
-      baseUrl = "https://api.x.ai/v1";
-      api = "openai-responses";
-      models = [
-        { id = "grok-4.20-0309-reasoning"; name = "Grok 4.20 (Reasoning)"; reasoning = true; input = [ "text" "image" ]; cost = { input = 2; output = 6; cacheRead = 0.2; cacheWrite = 0; }; contextWindow = 2000000; maxTokens = 30000; }
-        { id = "grok-4.20-0309-non-reasoning"; name = "Grok 4.20 (Non-Reasoning)"; reasoning = false; input = [ "text" "image" ]; cost = { input = 2; output = 6; cacheRead = 0.2; cacheWrite = 0; }; contextWindow = 2000000; maxTokens = 30000; }
-        { id = "grok-4-1-fast-reasoning"; name = "Grok 4.1 Fast (Reasoning)"; reasoning = true; input = [ "text" "image" ]; cost = { input = 0.2; output = 0.5; cacheRead = 0.05; cacheWrite = 0; }; contextWindow = 2000000; maxTokens = 30000; }
-        { id = "grok-4-1-fast-non-reasoning"; name = "Grok 4.1 Fast (Non-Reasoning)"; reasoning = false; input = [ "text" "image" ]; cost = { input = 0.2; output = 0.5; cacheRead = 0.05; cacheWrite = 0; }; contextWindow = 2000000; maxTokens = 30000; }
-      ];
-    };
+    availableModels = [
+      "anthropic/claude-sonnet-4-6"
+      "anthropic/claude-opus-4-6"
+      "anthropic/claude-haiku-4-5"
+      "google/gemini-2.5-pro"
+      "google/gemini-2.5-flash"
+      "openrouter/mistralai/mistral-large"
+      "openrouter/meta-llama/llama-4-maverick"
+    ];
     modelAliases = {
-      "google/gemini-2.5-flash"              = "gemini-flash";
-      "xai/grok-4.20-0309-reasoning"         = "grok-think";
-      "xai/grok-4.20-0309-non-reasoning"     = "grok";
-      "xai/grok-4-1-fast-reasoning"          = "grok-fast-think";
-      "xai/grok-4-1-fast-non-reasoning"      = "grok-fast";
+      "anthropic/claude-sonnet-4-6"            = "sonnet";
+      "anthropic/claude-opus-4-6"              = "opus";
+      "anthropic/claude-haiku-4-5"             = "haiku";
+      "google/gemini-2.5-pro"                  = "gemini-pro";
+      "google/gemini-2.5-flash"                = "gemini-flash";
+      "openrouter/mistralai/mistral-large"     = "mistral-large";
+      "openrouter/meta-llama/llama-4-maverick" = "llama-maverick";
     };
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];
