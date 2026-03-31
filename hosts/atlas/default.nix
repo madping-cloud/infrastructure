@@ -24,6 +24,8 @@
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     gateway.allowedOrigins = [ "https://192.168.4.6" "https://192.168.4.6:18002" "https://10.100.0.1" "https://10.100.0.1:18002" ];
     gateway.bind = "lan";
+    tools.sessionsVisibility = "all";
+    tools.agentToAgent = true;
     gateway.httpToolsAllow = [ "sessions_send" "sessions_spawn" ];
     userName = "Marc";
     primaryModel = "anthropic/claude-sonnet-4-6";

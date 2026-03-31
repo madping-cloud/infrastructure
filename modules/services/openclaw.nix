@@ -40,6 +40,8 @@ let
         search = { enabled = true; provider = cfg.webSearch.provider; };
         fetch.enabled = true;
       };
+      sessions.visibility = cfg.tools.sessionsVisibility;
+      agentToAgent.enabled = cfg.tools.agentToAgent;
     } // (if cfg.toolsAllow != [] then { allow = cfg.toolsAllow; } else {});
     messages = {
       ackReactionScope = "group-mentions";
@@ -141,6 +143,16 @@ in
       type = lib.types.listOf lib.types.str;
       default = [];
       description = "Extra tools to allow beyond defaults. e.g. [ \"cron\" ] to allow the agent to manage cron jobs.";
+    };
+    tools.sessionsVisibility = lib.mkOption {
+      type = lib.types.str;
+      default = "tree";
+      description = "Session tool visibility: self | tree | agent | all";
+    };
+    tools.agentToAgent = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Enable cross-agent session targeting via tools.agentToAgent.enabled";
     };
 
     # ── Discord options ────────────────────────────────────────────────────────

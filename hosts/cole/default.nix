@@ -70,6 +70,8 @@
     telegram.allowFrom = [ "5201076941" ];
     gateway.allowedOrigins = [ "https://192.168.4.6" "https://192.168.4.6:18001" "https://10.100.0.1" "https://10.100.0.1:18001" ];
     gateway.bind = "lan";
+    tools.sessionsVisibility = "all";
+    tools.agentToAgent = true;
     gateway.httpToolsAllow = [ "sessions_send" ];
     webSearch.provider = "tavily";
     webSearch.tavily.enable = true;
