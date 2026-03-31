@@ -11,6 +11,7 @@
   sops.secrets.shared_groq_api_key       = { sopsFile = "/etc/nixos/secrets/${host}/shared.yaml"; key = "groq_api_key"; };
   sops.secrets.shared_openrouter_api_key = { sopsFile = "/etc/nixos/secrets/${host}/shared.yaml"; key = "openrouter_api_key"; };
   sops.secrets.shared_vast_api_key       = { sopsFile = "/etc/nixos/secrets/${host}/shared.yaml"; key = "vast_api_key"; };
+  sops.secrets.shared_cluster_gateway_token = { sopsFile = "/etc/nixos/secrets/${host}/shared.yaml"; key = "cluster_gateway_token"; };
   sops.secrets.discord_token       = { sopsFile = "/etc/nixos/secrets/${host}/cole.yaml"; key = "discord_token"; };
   sops.secrets.telegram_token      = { sopsFile = "/etc/nixos/secrets/${host}/cole.yaml"; key = "telegram_token"; };
   sops.secrets.gateway_token       = { sopsFile = "/etc/nixos/secrets/${host}/cole.yaml"; key = "gateway_token"; };
@@ -68,6 +69,8 @@
     telegram.dmPolicy = "allowlist";
     telegram.allowFrom = [ "5201076941" ];
     gateway.allowedOrigins = [ "https://192.168.4.6" "https://192.168.4.6:18001" "https://10.100.0.1" "https://10.100.0.1:18001" ];
+    gateway.bind = "lan";
+    gateway.chatCompletions.enable = true;
     webSearch.provider = "tavily";
     webSearch.tavily.enable = true;
   };
@@ -89,7 +92,10 @@
     after = [ "network.target" ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
-      ExecStart = "${pkgs.socat}/bin/socat TCP-LISTEN:18790,fork,reuseaddr,bind=0.0.0.0 TCP:127.0.0.1:18789";
+      ExecStart = pkgs.writeShellScript "openclaw-bridge-start" ''
+        IP=$(${pkgs.iproute2}/bin/ip -4 addr show eth0 | ${pkgs.gawk}/bin/awk '/inet / {print $2}' | ${pkgs.coreutils}/bin/cut -d/ -f1)
+        exec ${pkgs.socat}/bin/socat TCP-LISTEN:18790,fork,reuseaddr,bind=0.0.0.0 "TCP:$IP:18789"
+      '';
       Restart = "always";
       RestartSec = "3s";
     };

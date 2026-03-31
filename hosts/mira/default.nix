@@ -11,6 +11,7 @@
   sops.secrets.shared_groq_api_key       = { sopsFile = "/etc/nixos/secrets/${host}/shared.yaml"; key = "groq_api_key"; };
   sops.secrets.shared_openrouter_api_key = { sopsFile = "/etc/nixos/secrets/${host}/shared.yaml"; key = "openrouter_api_key"; };
   sops.secrets.shared_vast_api_key       = { sopsFile = "/etc/nixos/secrets/${host}/shared.yaml"; key = "vast_api_key"; };
+  sops.secrets.shared_cluster_gateway_token = { sopsFile = "/etc/nixos/secrets/${host}/shared.yaml"; key = "cluster_gateway_token"; };
   sops.secrets.discord_token       = { sopsFile = "/etc/nixos/secrets/${host}/mira.yaml"; key = "discord_token"; };
   sops.secrets.telegram_token      = { sopsFile = "/etc/nixos/secrets/${host}/mira.yaml"; key = "telegram_token"; };
   sops.secrets.gateway_token       = { sopsFile = "/etc/nixos/secrets/${host}/mira.yaml"; key = "gateway_token"; };
@@ -23,6 +24,8 @@
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     gateway.allowedOrigins = [ "https://192.168.4.6" "https://192.168.4.6:18004" "https://10.100.0.1" "https://10.100.0.1:18004" ];
+    gateway.bind = "lan";
+    gateway.chatCompletions.enable = true;
     userName = "Marc";
     primaryModel = "anthropic/claude-sonnet-4-6";
     fallbackModels = [
@@ -68,7 +71,10 @@
     after = [ "network.target" ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
-      ExecStart = "${pkgs.socat}/bin/socat TCP-LISTEN:18790,fork,reuseaddr,bind=0.0.0.0 TCP:127.0.0.1:18789";
+      ExecStart = pkgs.writeShellScript "openclaw-bridge-start" ''
+        IP=$(${pkgs.iproute2}/bin/ip -4 addr show eth0 | ${pkgs.gawk}/bin/awk '/inet / {print $2}' | ${pkgs.coreutils}/bin/cut -d/ -f1)
+        exec ${pkgs.socat}/bin/socat TCP-LISTEN:18790,fork,reuseaddr,bind=0.0.0.0 "TCP:$IP:18789"
+      '';
       Restart = "always";
       RestartSec = "3s";
     };

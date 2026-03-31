@@ -59,7 +59,9 @@ let
       nodes.denyCommands = cfg.gateway.denyCommands;
     } // (lib.optionalAttrs (cfg.gateway.allowedOrigins != []) {
       controlUi.allowedOrigins = cfg.gateway.allowedOrigins;
-    });
+    }) // lib.optionalAttrs cfg.gateway.chatCompletions.enable {
+      http.endpoints.chatCompletions.enabled = true;
+    };
     plugins.entries.duckduckgo.enabled = true;
     plugins.entries.tavily.enabled = cfg.webSearch.tavily.enable;
   };
@@ -182,6 +184,8 @@ in
       description = "Allowed origins for the Control UI (gateway.controlUi.allowedOrigins).";
     };
 
+    gateway.chatCompletions.enable = lib.mkOption { type = lib.types.bool; default = false; description = "Enable the OpenAI-compatible /v1/chat/completions HTTP endpoint for inter-agent communication."; };
+
     # ── Web search options ─────────────────────────────────────────────────────
     webSearch.provider = lib.mkOption { type = lib.types.str; default = "duckduckgo"; };
     webSearch.tavily.enable = lib.mkOption { type = lib.types.bool; default = false; };
@@ -243,6 +247,7 @@ SHELLRC
       C_VAST=$(cat /run/secrets/vast_api_key 2>/dev/null || echo "")
       C_XAI=$(cat /run/secrets/xai_api_key 2>/dev/null || echo "")
       GW_TOKEN=$(cat /run/secrets/gateway_token 2>/dev/null || echo "")
+      CLUSTER_GW=$(cat /run/secrets/shared_cluster_gateway_token 2>/dev/null || echo "")
       cat > "$ENV_FILE" <<ENVEOF
 ANTHROPIC_API_KEY=$(pick "$C_ANTHROPIC" "$S_ANTHROPIC")
 OPENAI_API_KEY=$(pick "$C_OPENAI" "$S_OPENAI")
@@ -251,7 +256,8 @@ GROQ_API_KEY=$(pick "$C_GROQ" "$S_GROQ")
 OPENROUTER_API_KEY=$(pick "$C_OPENROUTER" "$S_OPENROUTER")
 VAST_API_KEY=$(pick "$C_VAST" "$S_VAST")
 XAI_API_KEY=$(pick "$C_XAI" "$S_XAI")
-OPENCLAW_GATEWAY_TOKEN=$GW_TOKEN
+OPENCLAW_GATEWAY_TOKEN=$(pick "$CLUSTER_GW" "$GW_TOKEN")
+OPENCLAW_CLUSTER_GATEWAY_TOKEN=$(pick "$CLUSTER_GW" "$GW_TOKEN")
 ENVEOF
       chmod 600 "$ENV_FILE"
       chown openclaw:openclaw "$ENV_FILE"
@@ -325,6 +331,8 @@ ENVEOF
         DISCORD=$(cat /run/secrets/discord_token 2>/dev/null || echo "")
         TELEGRAM=$(cat /run/secrets/telegram_token 2>/dev/null || echo "")
         GATEWAY=$(cat /run/secrets/gateway_token 2>/dev/null || echo "")
+        CLUSTER_GW=$(cat /run/secrets/shared_cluster_gateway_token 2>/dev/null || echo "")
+        [ -n "$CLUSTER_GW" ] && GATEWAY="$CLUSTER_GW"
         TEMP=$(mktemp)
         chmod 600 "$TEMP"
         trap 'rm -f "$TEMP" "$TEMP.new"' EXIT
