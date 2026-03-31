@@ -50,7 +50,6 @@
       "openrouter/meta-llama/llama-4-maverick"
       "openrouter/mistralai/mistral-small-2603"
       "openrouter/inception/mercury-2"
-      "openrouter/deepseek/deepseek-v3.2"
     ];
     modelAliases = {
       "anthropic/claude-sonnet-4-6"                        = "sonnet";
@@ -70,7 +69,6 @@
       "openrouter/meta-llama/llama-4-maverick"             = "llama-maverick";    # $0.15/1M — 1M ctx, capable agent
       "openrouter/mistralai/mistral-small-2603"            = "mistral-small";     # $0.15/1M — creative/reasoning
       "openrouter/inception/mercury-2"                     = "mercury";           # $0.25/1M — 1000+ tok/s, speed-critical
-      "openrouter/deepseek/deepseek-v3.2"                  = "deepseek-v3";       # DeepSeek — research/analysis
     };
     # xAI custom provider (absorbed from rune)
     customModelProviders.xai = {

@@ -14,15 +14,17 @@
   sops.secrets.shared_vast_api_key       = { sopsFile = "/etc/nixos/secrets/${host}/shared.yaml"; key = "vast_api_key"; };
   sops.secrets.shared_peer_gateway_token = { sopsFile = "/etc/nixos/secrets/${host}/shared.yaml"; key = "peer_gateway_token"; };
   # Container-specific secrets
-  sops.secrets.gateway_token  = { sopsFile = "/etc/nixos/secrets/${host}/siem.yaml"; key = "gateway_token"; };
-  sops.secrets.discord_token  = { sopsFile = "/etc/nixos/secrets/${host}/siem.yaml"; key = "discord_token"; };
+  sops.secrets.gateway_token     = { sopsFile = "/etc/nixos/secrets/${host}/siem.yaml"; key = "gateway_token"; };
+  sops.secrets.discord_token     = { sopsFile = "/etc/nixos/secrets/${host}/siem.yaml"; key = "discord_token"; };
+  sops.secrets.anthropic_api_key = { sopsFile = "/etc/nixos/secrets/${host}/siem.yaml"; key = "anthropic_api_key"; };
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     gateway.allowedOrigins = [ "https://192.168.4.6" "https://192.168.4.6:18010" "https://10.100.0.1" "https://10.100.0.1:18010" ];
     gateway.bind = "lan";
     tools.sessionsVisibility = "all";
     tools.agentToAgent = true;
-    gateway.httpToolsAllow = [ "sessions_send" ];
+    toolsAllow = [ "cron" ];
+    gateway.httpToolsAllow = [ "sessions_send" "sessions_spawn" ];
     userName = "Marc";
     maxConcurrent = 2;
     subagentsMaxConcurrent = 2;
@@ -32,22 +34,22 @@
       "openrouter/meta-llama/llama-4-scout"
     ];
     availableModels = [
-      # Anthropic (direct — primary, on subscription)
+      # Anthropic (Max sub — Morgan's own thinking)
       "anthropic/claude-haiku-4-5"
       "anthropic/claude-sonnet-4-6"
       "anthropic/claude-opus-4-6"
-      # OpenRouter — cheap capable workers
+      # OpenRouter — cheap drone models for monitoring loops
       "openrouter/meta-llama/llama-4-maverick"
       "openrouter/meta-llama/llama-4-scout"
       "openrouter/google/gemini-2.5-flash-lite"
     ];
     modelAliases = {
-      "anthropic/claude-haiku-4-5"               = "haiku";            # Default — fast triage, alerts
-      "anthropic/claude-sonnet-4-6"              = "sonnet";           # Incident investigation
-      "anthropic/claude-opus-4-6"                = "opus";             # Deep threat analysis
-      "openrouter/meta-llama/llama-4-maverick"   = "llama-maverick";   # $0.15/1M — large log analysis
-      "openrouter/meta-llama/llama-4-scout"      = "llama-scout";      # $0.08/1M — cheapest worker
-      "openrouter/google/gemini-2.5-flash-lite"  = "gemini-flash-lite"; # Large context analysis
+      "anthropic/claude-haiku-4-5"               = "haiku";            # Primary — fast triage, always-on
+      "anthropic/claude-sonnet-4-6"              = "sonnet";           # Incident investigation, judgment calls
+      "anthropic/claude-opus-4-6"                = "opus";             # Deep threat analysis, critical incidents
+      "openrouter/meta-llama/llama-4-maverick"   = "llama-maverick";   # $0.15/1M — drone: large log analysis
+      "openrouter/meta-llama/llama-4-scout"      = "llama-scout";      # $0.08/1M — drone: cheapest monitor
+      "openrouter/google/gemini-2.5-flash-lite"  = "gemini-flash-lite"; # $0.10/1M — drone: infra health checks
     };
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];

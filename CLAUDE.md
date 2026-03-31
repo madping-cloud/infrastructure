@@ -11,13 +11,13 @@ Pull-based GitOps infrastructure for NixOS containers on Debian hosts using Incu
 **Hosts** (Debian + Incus): Thor (10.100.0.1), Loki (planned)
 **Containers** (NixOS 25.11 on Thor):
 
-| Agent | Role | Primary Model | Auth | Tier |
-|-------|------|---------------|------|------|
-| atlas | Coordinator + Exec/SVP team (strategy, MXDR, knowledge) | sonnet-4-6 | Max sub | 1 — sessions_spawn |
-| cole | Infrastructure + Coder team (dev, code review, xAI) | sonnet-4-6 | Max sub | 1 — sessions_spawn |
-| mira | Adult content agent | sonnet-4-6 | Anthropic API | 2 |
-| siem | Security monitoring/analysis | haiku-4-5 | API (haiku) | 3 — lightweight |
-| aurora | Companion agent (Connie) | gemini-flash | Google AI | 3 — non-Anthropic |
+| Agent | Name | Role | Primary Model | Auth | Tier |
+|-------|------|------|---------------|------|------|
+| atlas | Atlas | COO — company ops, content pipeline, business strategy | sonnet-4-6 | Max sub | 1 — sessions_spawn |
+| cole | Cole | Infrastructure Lead — all infra, VMs, networking, deploys | sonnet-4-6 | Max sub | 1 — sessions_spawn |
+| siem | Morgan | Monitoring Lead — security, uptime, infra health, metrics | haiku-4-5 | Max sub | 1 — sessions_spawn + cron |
+| mira | Mira | Independent — adult content | sonnet-4-6 | Anthropic API | 2 |
+| aurora | Aurora | Companion — Connie's chatbot | gemini-flash | Google AI | 3 — non-Anthropic |
 
 Every container's NixOS config is built from a module stack applied by `lib/default.nix`'s `mkAgent` helper:
 1. `sops-nix` — secret decryption
@@ -81,7 +81,14 @@ Agents communicate via gateway-to-gateway HTTP using a shared `peer_gateway_toke
 - `tools.agentToAgent = true` — enable cross-agent targeting
 - `gateway.httpToolsAllow = [ "sessions_send" ]` — allow inbound session messages
 
-Atlas and Cole both have `sessions_spawn` capability. Atlas is the exec/SVP coordinator; Cole is the coder team lead.
+Atlas, Cole, and Morgan all have `sessions_spawn` capability. Each lead agent manages a team of subagents:
+- **Atlas (COO)**: VP Content, VP Marketing, Script Writer, Research Analyst, Creative Director, Production Coord, Finance Analyst
+- **Cole (Infra Lead)**: DevOps Engineer, Network Engineer, VM Provisioner, Automation Engineer
+- **Morgan (Monitoring)**: Threat Analyst, Alert Dispatcher, Uptime Monitor drones, Log Analyzer drones, Infra Health drones
+
+Persistent subagents are resumed via `sessions_send`. On-demand subagents are spawned fresh. Morgan's drone subagents run on cron schedules using cheap OpenRouter models (Llama-Scout, Gemini-Flash-Lite).
+
+**Model policy:** No Chinese-origin models (DeepSeek, Qwen). Approved: Anthropic, Google, xAI (Cole only), Meta/Mistral/Inception via OpenRouter.
 
 ## Secrets
 
@@ -110,4 +117,6 @@ Agent personality files (SOUL.md, IDENTITY.md, AGENTS.md, USER.md, TOOLS.md) liv
 - Nix sandbox is disabled (LXC incompatibility)
 - OpenClaw config is fully declarative via `services.openclaw.*` options in host configs — the module regenerates `openclaw.json` from scratch on every deploy
 - Structured logging format: `level= action= host= msg= key=value`
-- Atlas and Cole run on Claude Max subscription; Mira and SIEM use Anthropic API; Aurora uses Google AI
+- Atlas, Cole, and Morgan run on Claude Max subscription; Mira uses Anthropic API; Aurora uses Google AI
+- Atlas has NO root access to Thor — Cole handles all infrastructure changes
+- Morgan owns ALL scheduled monitoring (cron) — security + infra health consolidated under one agent

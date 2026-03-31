@@ -55,7 +55,6 @@
       "openrouter/mistralai/mistral-small-2603"
       "openrouter/inception/mercury-2"
       "openrouter/google/gemini-2.5-flash-lite"
-      "openrouter/deepseek/deepseek-v3.2"
     ];
     modelAliases = {
       "anthropic/claude-sonnet-4-6"             = "sonnet";            # Default — best reasoning, on subscription
@@ -70,7 +69,6 @@
       "openrouter/mistralai/mistral-small-2603" = "mistral-small";     # $0.15/1M — creative/narrative
       "openrouter/inception/mercury-2"          = "mercury";           # $0.25/1M — 1000+ tok/s, text-only
       "openrouter/google/gemini-2.5-flash-lite" = "or-gemini-lite";    # OpenRouter path for Gemini lite
-      "openrouter/deepseek/deepseek-v3.2"       = "deepseek-v3";       # DeepSeek — research/analysis
     };
     webSearch.provider = "tavily";
     webSearch.tavily.enable = true;
