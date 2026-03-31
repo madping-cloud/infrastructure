@@ -23,19 +23,24 @@
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     gateway.allowedOrigins = [ "https://192.168.4.6" "https://192.168.4.6:18002" "https://10.100.0.1" "https://10.100.0.1:18002" ];
     userName = "Marc";
-    primaryModel = "google/gemini-2.5-flash";
+    primaryModel = "anthropic/claude-sonnet-4-6";
     fallbackModels = [
-      "anthropic/claude-sonnet-4-6"
-      "openrouter/meta-llama/llama-4-maverick"
+      "anthropic/claude-opus-4-6"
+      "google/gemini-2.5-pro"
+      "openai/gpt-4o"
     ];
     availableModels = [
-      # Google (direct — default, strong multimodal)
+      # Anthropic (direct — primary, on subscription)
+      "anthropic/claude-sonnet-4-6"
+      "anthropic/claude-opus-4-6"
+      "anthropic/claude-haiku-4-5"
+      # Google (direct — strong multimodal)
       "google/gemini-2.5-flash"
+      "google/gemini-2.5-pro"
       "google/gemini-2.5-flash-lite"
       "google/imagen-4"
-      # Anthropic (direct — high quality, reliable)
-      "anthropic/claude-sonnet-4-6"
-      "anthropic/claude-haiku-4-5"
+      # OpenAI (direct)
+      "openai/gpt-4o"
       # OpenRouter — cheap capable workers
       "openrouter/meta-llama/llama-4-scout"
       "openrouter/meta-llama/llama-4-maverick"
@@ -44,12 +49,15 @@
       "openrouter/google/gemini-2.5-flash-lite"
     ];
     modelAliases = {
-      "google/gemini-2.5-flash"                = "gemini-flash";       # Default — fast, multimodal, conversational
-      "google/gemini-2.5-flash-lite"           = "gemini-flash-lite";  # Lighter/cheaper Google
-      "anthropic/claude-sonnet-4-6"            = "sonnet";             # Best reasoning, reliable, on subscription
-      "anthropic/claude-haiku-4-5"             = "haiku";              # Fastest Claude, mechanical tasks
-      "openrouter/meta-llama/llama-4-scout"    = "llama-scout";        # $0.08/1M — cheapest capable worker
-      "openrouter/meta-llama/llama-4-maverick" = "llama-maverick";     # $0.15/1M — 1M ctx, multi-step tasks
+      "anthropic/claude-sonnet-4-6"             = "sonnet";            # Default — best reasoning, on subscription
+      "anthropic/claude-opus-4-6"               = "opus";              # Deep reasoning, hard problems
+      "anthropic/claude-haiku-4-5"              = "haiku";             # Fastest Claude, mechanical tasks
+      "google/gemini-2.5-flash"                 = "gemini-flash";      # Fast, multimodal, conversational
+      "google/gemini-2.5-pro"                   = "gemini-pro";        # Google's best
+      "google/gemini-2.5-flash-lite"            = "gemini-flash-lite"; # Lighter/cheaper Google
+      "openai/gpt-4o"                           = "gpt-4o";            # OpenAI flagship
+      "openrouter/meta-llama/llama-4-scout"     = "llama-scout";       # $0.08/1M — cheapest capable worker
+      "openrouter/meta-llama/llama-4-maverick"  = "llama-maverick";    # $0.15/1M — 1M ctx, multi-step tasks
       "openrouter/mistralai/mistral-small-2603" = "mistral-small";     # $0.15/1M — creative/narrative
       "openrouter/inception/mercury-2"          = "mercury";           # $0.25/1M — 1000+ tok/s, text-only
       "openrouter/google/gemini-2.5-flash-lite" = "or-gemini-lite";    # OpenRouter path for Gemini lite
