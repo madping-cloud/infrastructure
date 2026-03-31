@@ -19,6 +19,7 @@
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     gateway.allowedOrigins = [ "https://192.168.4.6" "https://192.168.4.6:18010" "https://10.100.0.1" "https://10.100.0.1:18010" ];
+    gateway.bind = "lan";
     gateway.httpToolsAllow = [ "sessions_send" ];
     userName = "Marc";
     primaryModel = "anthropic/claude-haiku-4-5";
