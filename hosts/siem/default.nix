@@ -43,7 +43,6 @@
       "openrouter/google/gemini-2.5-flash-lite"  = "gemini-flash-lite"; # Large context analysis
     };
     discord.enable = true;
-    discord.channel = "1488369431120707735";
     discord.allowFrom = [ "166609345080066048" ];
     # No telegram, no webSearch
   };
