@@ -25,11 +25,11 @@
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     maxConcurrent = 3;
-    subagentsMaxConcurrent = 6;
+    subagentsMaxConcurrent = 4;
     primaryModel = "anthropic/claude-sonnet-4-6";
     fallbackModels = [
-      "anthropic/claude-opus-4-6"
       "anthropic/claude-haiku-4-5"
+      "openrouter/meta-llama/llama-4-maverick"
     ];
     availableModels = [
       # Anthropic (Max sub — use freely)

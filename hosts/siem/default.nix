@@ -27,7 +27,7 @@
     gateway.httpToolsAllow = [ "sessions_send" "sessions_spawn" ];
     userName = "Marc";
     maxConcurrent = 2;
-    subagentsMaxConcurrent = 2;
+    subagentsMaxConcurrent = 4;
     primaryModel = "anthropic/claude-haiku-4-5";
     fallbackModels = [
       "openrouter/meta-llama/llama-4-maverick"
