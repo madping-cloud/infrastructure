@@ -9,8 +9,13 @@ let
     (builtins.listToAttrs (map (m: { name = m; value = {}; }) cfg.availableModels))
     // (builtins.mapAttrs (model: alias: { alias = alias; }) cfg.modelAliases);
 
-  # Build agents.list entries from extraAgents
-  extraAgentsList = lib.mapAttrsToList (id: agent: {
+  # Build agents.list — when extraAgents are configured, we must explicitly include
+  # the "main" agent in the list, otherwise agents.list replaces the implicit main.
+  mainAgentEntry = {
+    id = "main";
+    default = true;
+  };
+  extraAgentEntries = lib.mapAttrsToList (id: agent: {
     inherit id;
     name = agent.name;
     model = {
@@ -23,6 +28,7 @@ let
   }) // (lib.optionalAttrs (agent.subagentModel != null) {
     subagents.model = agent.subagentModel;
   })) cfg.extraAgents;
+  agentsList = [ mainAgentEntry ] ++ extraAgentEntries;
 
   # Collect all bindings from extraAgents
   allBindings = lib.concatLists (lib.mapAttrsToList (_id: agent: agent.bindings) cfg.extraAgents);
@@ -74,7 +80,7 @@ let
     plugins.entries.tavily.enabled = cfg.webSearch.tavily.enable;
   }
   # Add agents.list when extraAgents are configured
-  // (lib.optionalAttrs (cfg.extraAgents != {}) { agents.list = extraAgentsList; })
+  // (lib.optionalAttrs (cfg.extraAgents != {}) { agents.list = agentsList; })
   # Add bindings when extraAgents have them
   // (lib.optionalAttrs (allBindings != []) { bindings = allBindings; });
 
