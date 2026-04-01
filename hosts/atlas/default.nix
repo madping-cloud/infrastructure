@@ -21,6 +21,9 @@
   sops.secrets.groq_api_key        = { sopsFile = "/etc/nixos/secrets/${host}/atlas.yaml"; key = "groq_api_key"; };
   sops.secrets.openrouter_api_key  = { sopsFile = "/etc/nixos/secrets/${host}/atlas.yaml"; key = "openrouter_api_key"; };
   sops.secrets.tavily_api_key      = { sopsFile = "/etc/nixos/secrets/${host}/atlas.yaml"; key = "tavily_api_key"; };
+  # Morgan's channel tokens (consolidated from siem)
+  sops.secrets.morgan_discord_token  = { sopsFile = "/etc/nixos/secrets/${host}/atlas.yaml"; key = "morgan_discord_token"; };
+  sops.secrets.morgan_telegram_token = { sopsFile = "/etc/nixos/secrets/${host}/atlas.yaml"; key = "morgan_telegram_token"; };
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     gateway.allowedOrigins = [ "https://192.168.4.6" "https://192.168.4.6:18002" "https://10.100.0.1" "https://10.100.0.1:18002" ];
@@ -29,8 +32,8 @@
     tools.agentToAgent = true;
     gateway.httpToolsAllow = [ "sessions_send" "sessions_spawn" ];
     userName = "Marc";
-    maxConcurrent = 3;
-    subagentsMaxConcurrent = 4;
+    maxConcurrent = 5;          # gateway-wide: Atlas 3 + Morgan 2
+    subagentsMaxConcurrent = 8; # shared pool for both agents
     primaryModel = "anthropic/claude-sonnet-4-6";
     fallbackModels = [
       "anthropic/claude-haiku-4-5"
@@ -77,6 +80,24 @@
     discord.threadBindings.enable = true;
     telegram.enable = true;
     telegram.allowFrom = [ "5201076941" ];
+    # ── Morgan (Monitoring Lead) — consolidated from siem container ─────────
+    extraAgents.morgan = {
+      name = "Morgan";
+      primaryModel = "anthropic/claude-haiku-4-5";
+      fallbackModels = [
+        "openrouter/meta-llama/llama-4-maverick"
+        "openrouter/meta-llama/llama-4-scout"
+      ];
+      subagentModel = "openrouter/meta-llama/llama-4-scout";
+      workspace = "/var/lib/openclaw/workspace-morgan";
+      toolsAllow = [ "cron" ];
+      discordTokenSecret = "morgan_discord_token";
+      telegramTokenSecret = "morgan_telegram_token";
+      bindings = [
+        { type = "route"; agentId = "morgan"; match = { channel = "discord"; accountId = "morgan"; }; }
+        { type = "route"; agentId = "morgan"; match = { channel = "telegram"; accountId = "morgan"; }; }
+      ];
+    };
   };
   # Startup performance optimizations (recommended by openclaw doctor)
   systemd.services.openclaw-gateway.environment = {

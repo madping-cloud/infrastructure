@@ -12,5 +12,4 @@ containers:
     flake_target: aurora
   - name: mira
     flake_target: mira
-  - name: siem
-    flake_target: siem
+  # siem removed — Morgan consolidated into atlas

@@ -56,12 +56,7 @@
         hostModule = ./hosts/mira/default.nix;
       };
 
-      # SIEM — Security Analyst
-      # Monitors all agent activity, logs events, flags anomalies, Discord alerts.
-      siem = mkAgent {
-        name       = "siem";
-        hostModule = ./hosts/siem/default.nix;
-      };
+      # Morgan (SIEM) — consolidated into atlas as an extraAgent
     };
 
     # ── Dev Shell ─────────────────────────────────────────────────────────────

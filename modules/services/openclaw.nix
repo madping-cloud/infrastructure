@@ -8,6 +8,25 @@ let
   availableModelsAttr =
     (builtins.listToAttrs (map (m: { name = m; value = {}; }) cfg.availableModels))
     // (builtins.mapAttrs (model: alias: { alias = alias; }) cfg.modelAliases);
+
+  # Build agents.list entries from extraAgents
+  extraAgentsList = lib.mapAttrsToList (id: agent: {
+    inherit id;
+    name = agent.name;
+    model = {
+      primary = agent.primaryModel;
+      fallbacks = agent.fallbackModels;
+    };
+    workspace = agent.workspace;
+  } // (lib.optionalAttrs (agent.toolsAllow != []) {
+    tools.allow = agent.toolsAllow;
+  }) // (lib.optionalAttrs (agent.subagentModel != null) {
+    subagents.model = agent.subagentModel;
+  })) cfg.extraAgents;
+
+  # Collect all bindings from extraAgents
+  allBindings = lib.concatLists (lib.mapAttrsToList (_id: agent: agent.bindings) cfg.extraAgents);
+
   baseConfig = {
     meta = {};
     agents.defaults = {
@@ -53,9 +72,19 @@ let
     });
     plugins.entries.duckduckgo.enabled = true;
     plugins.entries.tavily.enabled = cfg.webSearch.tavily.enable;
-  };
+  }
+  # Add agents.list when extraAgents are configured
+  // (lib.optionalAttrs (cfg.extraAgents != {}) { agents.list = extraAgentsList; })
+  # Add bindings when extraAgents have them
+  // (lib.optionalAttrs (allBindings != []) { bindings = allBindings; });
 
   # Merge channels from both discord and telegram
+  # When extraAgents have Discord/Telegram tokens, generate named accounts
+  extraDiscordAccounts = lib.filterAttrs (_: v: v != null)
+    (lib.mapAttrs (id: agent: if agent.discordTokenSecret != null then {} else null) cfg.extraAgents);
+  extraTelegramAccounts = lib.filterAttrs (_: v: v != null)
+    (lib.mapAttrs (id: agent: if agent.telegramTokenSecret != null then { botToken = ""; } else null) cfg.extraAgents);
+
   channelsAttr =
     (lib.optionalAttrs cfg.discord.enable {
       discord = {
@@ -71,6 +100,8 @@ let
           idleHours = cfg.discord.threadBindings.idleHours;
           spawnSubagentSessions = cfg.discord.threadBindings.spawnSubagentSessions;
         };
+      } // lib.optionalAttrs (extraDiscordAccounts != {}) {
+        accounts = extraDiscordAccounts;
       };
     })
     // (lib.optionalAttrs cfg.telegram.enable {
@@ -81,12 +112,14 @@ let
         streaming = cfg.telegram.streaming;
         allowFrom = cfg.telegram.allowFrom;
         groups."*".requireMention = cfg.telegram.requireMention;
-        accounts.default = {
-          dmPolicy = "allowlist";
-          groupPolicy = cfg.telegram.groupPolicy;
-          streaming = cfg.telegram.streaming;
-          allowFrom = cfg.telegram.allowFrom;
-        };
+        accounts = {
+          default = {
+            dmPolicy = "allowlist";
+            groupPolicy = cfg.telegram.groupPolicy;
+            streaming = cfg.telegram.streaming;
+            allowFrom = cfg.telegram.allowFrom;
+          };
+        } // extraTelegramAccounts;
       };
     });
 
@@ -94,6 +127,9 @@ let
     // lib.optionalAttrs (channelsAttr != {}) { channels = channelsAttr; }
     // lib.optionalAttrs (cfg.customModelProviders != {}) { models = { mode = "merge"; providers = cfg.customModelProviders; }; };
   configJson = builtins.toJSON fullConfig;
+
+  # List of all agent IDs (main + extras) for activation scripts
+  allAgentIds = [ "main" ] ++ (lib.attrNames cfg.extraAgents);
 in
 {
   options.services.openclaw = {
@@ -110,12 +146,12 @@ in
     maxConcurrent = lib.mkOption {
       type = lib.types.int;
       default = 4;
-      description = "Max concurrent conversations (agents.defaults.maxConcurrent)";
+      description = "Max concurrent conversations — gateway-wide, shared across all agents (agents.defaults.maxConcurrent)";
     };
     subagentsMaxConcurrent = lib.mkOption {
       type = lib.types.int;
       default = 8;
-      description = "Max concurrent subagent sessions (agents.defaults.subagents.maxConcurrent)";
+      description = "Max concurrent subagent sessions — gateway-wide, shared across all agents (agents.defaults.subagents.maxConcurrent)";
     };
 
     # ── Model options ──────────────────────────────────────────────────────────
@@ -141,7 +177,7 @@ in
     toolsAllow = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [];
-      description = "Extra tools to allow beyond defaults. e.g. [ \"cron\" ] to allow the agent to manage cron jobs.";
+      description = "Extra tools to allow beyond defaults for the default (main) agent. e.g. [ \"cron\" ]";
     };
     tools.sessionsVisibility = lib.mkOption {
       type = lib.types.str;
@@ -152,6 +188,25 @@ in
       type = lib.types.bool;
       default = false;
       description = "Enable cross-agent session targeting via tools.agentToAgent.enabled";
+    };
+
+    # ── Extra agents (multi-agent on one gateway) ─────────────────────────────
+    extraAgents = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.submodule {
+        options = {
+          name = lib.mkOption { type = lib.types.str; description = "Display name for this agent"; };
+          primaryModel = lib.mkOption { type = lib.types.str; description = "Primary model for this agent"; };
+          fallbackModels = lib.mkOption { type = lib.types.listOf lib.types.str; default = []; };
+          subagentModel = lib.mkOption { type = lib.types.nullOr lib.types.str; default = null; description = "Default model for subagents spawned by this agent"; };
+          workspace = lib.mkOption { type = lib.types.str; description = "Workspace directory path for this agent"; };
+          toolsAllow = lib.mkOption { type = lib.types.listOf lib.types.str; default = []; description = "Tools to allow for this agent (e.g. [ \"cron\" ])"; };
+          discordTokenSecret = lib.mkOption { type = lib.types.nullOr lib.types.str; default = null; description = "sops secret name for this agent's Discord bot token"; };
+          telegramTokenSecret = lib.mkOption { type = lib.types.nullOr lib.types.str; default = null; description = "sops secret name for this agent's Telegram bot token"; };
+          bindings = lib.mkOption { type = lib.types.listOf lib.types.attrs; default = []; description = "Routing bindings for this agent"; };
+        };
+      });
+      default = {};
+      description = "Additional agents on this gateway. Each gets its own workspace, model config, and channel bindings.";
     };
 
     # ── Discord options ────────────────────────────────────────────────────────
@@ -201,22 +256,6 @@ in
       default = [];
       description = "Tools to allow over HTTP /tools/invoke (removes from default deny list).";
     };
-    peers.enable = lib.mkOption {
-      type = lib.types.bool;
-      default = true;
-      description = "Write /run/openclaw-peers.json with peer connection info.";
-    };
-    peers.roster = lib.mkOption {
-      type = lib.types.attrsOf lib.types.str;
-      default = {
-        cole   = "http://10.100.0.19:18789";
-        atlas  = "http://10.100.0.85:18789";
-        aurora = "http://10.100.0.158:18789";
-        mira   = "http://10.100.0.125:18789";
-        siem   = "http://10.100.0.114:18789";
-      };
-      description = "Map of peer agent names to gateway URLs. Token is injected at runtime from shared_peer_gateway_token secret.";
-    };
 
     # ── Web search options ─────────────────────────────────────────────────────
     webSearch.provider = lib.mkOption { type = lib.types.str; default = "duckduckgo"; };
@@ -235,7 +274,10 @@ in
       "d /var/lib/openclaw/.openclaw/credentials   0750 openclaw openclaw -"
       "d ${cfg.workDir}                             0750 openclaw openclaw -"
       "d ${cfg.workDir}/memory                      0750 openclaw openclaw -"
-    ];
+    ] ++ (lib.concatLists (lib.mapAttrsToList (_id: agent: [
+      "d ${agent.workspace}         0750 openclaw openclaw -"
+      "d ${agent.workspace}/memory  0750 openclaw openclaw -"
+    ]) cfg.extraAgents));
 
     # ── Shell profile ────────────────────────────────────────────────────────
     system.activationScripts.openclawProfile = { text = ''
@@ -259,25 +301,14 @@ SHELLRC
       chmod 600 "$CONFIG"
     ''; deps = []; };
 
-    # ── Peer config (inter-agent comms) ─────────────────────────────────────
-    system.activationScripts.openclawPeerConfig = lib.mkIf (cfg.peers.enable && cfg.peers.roster != {}) {
-      text = let
-        # Build roster JSON at eval time with placeholder token; token is injected at runtime
-        rosterJson = builtins.toJSON {
-          peers = lib.mapAttrs (_name: url: { inherit url; token = "__PEER_TOKEN__"; }) cfg.peers.roster;
-        };
-      in ''
-        PEERS_FILE="/run/openclaw-peers.json"
-        PEER_TOKEN=$(cat /run/secrets/shared_peer_gateway_token 2>/dev/null || echo "")
-        if [ -n "$PEER_TOKEN" ]; then
-          echo '${rosterJson}' | ${jqBin} --arg token "$PEER_TOKEN" \
-            '.peers |= with_entries(.value.token = $token)' > "$PEERS_FILE"
-          chmod 640 "$PEERS_FILE"
-          chown openclaw:openclaw "$PEERS_FILE" 2>/dev/null || true
-        fi
-      '';
-      deps = [ "setupSecrets" ];
-    };
+    # ── Extra agent directories ──────────────────────────────────────────────
+    system.activationScripts.openclawAgentDirs = lib.mkIf (cfg.extraAgents != {}) { text = ''
+      ${lib.concatStringsSep "\n" (lib.mapAttrsToList (id: _agent: ''
+        mkdir -p "/var/lib/openclaw/.openclaw/agents/${id}/agent"
+        mkdir -p "/var/lib/openclaw/.openclaw/agents/${id}/sessions"
+      '') cfg.extraAgents)}
+      chown -R openclaw:openclaw /var/lib/openclaw/.openclaw/agents
+    ''; deps = [ "openclawConfig" ]; };
 
     # ── Environment file (API keys) ──────────────────────────────────────────
     system.activationScripts.openclawEnv = { text = ''
@@ -314,12 +345,8 @@ ENVEOF
     ''; deps = [ "setupSecrets" ]; };
 
     # ── Auth profiles (API key injection) ────────────────────────────────────
+    # Write auth-profiles.json for main agent + all extra agents
     system.activationScripts.openclawAuthPatch = { text = ''
-      AUTH_DIR="/var/lib/openclaw/.openclaw/agents/main/agent"
-      AUTH_FILE="$AUTH_DIR/auth-profiles.json"
-      mkdir -p "$AUTH_DIR"
-      chown -R openclaw:openclaw /var/lib/openclaw/.openclaw/agents
-
       pick() { for v in "$@"; do [ -n "$v" ] && echo "$v" && return; done; echo ""; }
 
       ANTHROPIC=$(pick "$(cat /run/secrets/anthropic_api_key 2>/dev/null || echo "")" "$(cat /run/secrets/shared_anthropic_api_key 2>/dev/null || echo "")")
@@ -330,49 +357,56 @@ ENVEOF
       XAI=$(pick "$(cat /run/secrets/xai_api_key 2>/dev/null || echo "")" "$(cat /run/secrets/shared_xai_api_key 2>/dev/null || echo "")")
 
       if ! ( [ -z "$ANTHROPIC" ] && [ -z "$OPENAI" ] && [ -z "$GOOGLE" ] && [ -z "$GROQ" ] && [ -z "$OPENROUTER" ] && [ -z "$XAI" ] ); then
-        TEMP=$(mktemp)
-        chmod 600 "$TEMP"
-        trap 'rm -f "$TEMP" "$TEMP.new"' EXIT
-        if [ -f "$AUTH_FILE" ]; then
-          cp "$AUTH_FILE" "$TEMP"
-        else
-          echo '{"version":1,"profiles":{},"lastGood":{}}' > "$TEMP"
-        fi
+        # Write auth profiles for each agent (main + extras share the same API keys)
+        for AGENT_ID in ${lib.concatStringsSep " " allAgentIds}; do
+          AUTH_DIR="/var/lib/openclaw/.openclaw/agents/$AGENT_ID/agent"
+          AUTH_FILE="$AUTH_DIR/auth-profiles.json"
+          mkdir -p "$AUTH_DIR"
 
-        if [ -n "$ANTHROPIC" ]; then
-          rm -f "$TEMP.new"
-          ${jqBin} --arg token "$ANTHROPIC" '.profiles["anthropic:default"] = {"type":"token","provider":"anthropic","token":$token} | .lastGood.anthropic = "anthropic:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
-        fi
-        if [ -n "$OPENAI" ]; then
-          rm -f "$TEMP.new"
-          ${jqBin} --arg token "$OPENAI" '.profiles["openai:default"] = {"type":"token","provider":"openai","token":$token} | .lastGood.openai = "openai:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
-        fi
-        if [ -n "$GOOGLE" ]; then
-          rm -f "$TEMP.new"
-          ${jqBin} --arg token "$GOOGLE" '.profiles["google:default"] = {"type":"token","provider":"google","token":$token} | .lastGood.google = "google:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
-        fi
-        if [ -n "$GROQ" ]; then
-          rm -f "$TEMP.new"
-          ${jqBin} --arg token "$GROQ" '.profiles["groq:default"] = {"type":"token","provider":"groq","token":$token} | .lastGood.groq = "groq:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
-        fi
-        if [ -n "$OPENROUTER" ]; then
-          rm -f "$TEMP.new"
-          ${jqBin} --arg token "$OPENROUTER" '.profiles["openrouter:default"] = {"type":"token","provider":"openrouter","token":$token} | .lastGood.openrouter = "openrouter:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
-        fi
-        if [ -n "$XAI" ]; then
-          rm -f "$TEMP.new"
-          ${jqBin} --arg token "$XAI" '.profiles["xai:default"] = {"type":"token","provider":"xai","token":$token} | .lastGood.xai = "xai:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
-        fi
+          TEMP=$(mktemp)
+          chmod 600 "$TEMP"
+          if [ -f "$AUTH_FILE" ]; then
+            cp "$AUTH_FILE" "$TEMP"
+          else
+            echo '{"version":1,"profiles":{},"lastGood":{}}' > "$TEMP"
+          fi
 
-        if [ -s "$TEMP" ] && ${jqBin} empty "$TEMP" 2>/dev/null; then
-          mv "$TEMP" "$AUTH_FILE"
-          chown openclaw:openclaw "$AUTH_FILE"
-          chmod 600 "$AUTH_FILE"
-        else
-          rm -f "$TEMP" "$TEMP.new"
-        fi
+          if [ -n "$ANTHROPIC" ]; then
+            rm -f "$TEMP.new"
+            ${jqBin} --arg token "$ANTHROPIC" '.profiles["anthropic:default"] = {"type":"token","provider":"anthropic","token":$token} | .lastGood.anthropic = "anthropic:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
+          fi
+          if [ -n "$OPENAI" ]; then
+            rm -f "$TEMP.new"
+            ${jqBin} --arg token "$OPENAI" '.profiles["openai:default"] = {"type":"token","provider":"openai","token":$token} | .lastGood.openai = "openai:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
+          fi
+          if [ -n "$GOOGLE" ]; then
+            rm -f "$TEMP.new"
+            ${jqBin} --arg token "$GOOGLE" '.profiles["google:default"] = {"type":"token","provider":"google","token":$token} | .lastGood.google = "google:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
+          fi
+          if [ -n "$GROQ" ]; then
+            rm -f "$TEMP.new"
+            ${jqBin} --arg token "$GROQ" '.profiles["groq:default"] = {"type":"token","provider":"groq","token":$token} | .lastGood.groq = "groq:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
+          fi
+          if [ -n "$OPENROUTER" ]; then
+            rm -f "$TEMP.new"
+            ${jqBin} --arg token "$OPENROUTER" '.profiles["openrouter:default"] = {"type":"token","provider":"openrouter","token":$token} | .lastGood.openrouter = "openrouter:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
+          fi
+          if [ -n "$XAI" ]; then
+            rm -f "$TEMP.new"
+            ${jqBin} --arg token "$XAI" '.profiles["xai:default"] = {"type":"token","provider":"xai","token":$token} | .lastGood.xai = "xai:default"' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
+          fi
+
+          if [ -s "$TEMP" ] && ${jqBin} empty "$TEMP" 2>/dev/null; then
+            mv "$TEMP" "$AUTH_FILE"
+            chown openclaw:openclaw "$AUTH_FILE"
+            chmod 600 "$AUTH_FILE"
+          else
+            rm -f "$TEMP" "$TEMP.new"
+          fi
+        done
+        chown -R openclaw:openclaw /var/lib/openclaw/.openclaw/agents
       fi
-    ''; deps = [ "openclawConfig" "setupSecrets" ]; };
+    ''; deps = [ "openclawConfig" "openclawAgentDirs" "setupSecrets" ]; };
 
     # ── Channel secret injection (tokens from sops into openclaw.json) ───────
     system.activationScripts.openclawChannelPatch = { text = ''
@@ -409,6 +443,23 @@ ENVEOF
           rm -f "$TEMP.new"
           ${jqBin} --arg token "$GATEWAY" '.gateway.auth.token = $token' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
         fi
+        # Inject extra agent channel tokens
+        ${lib.concatStringsSep "\n" (lib.mapAttrsToList (id: agent:
+          (lib.optionalString (agent.discordTokenSecret != null) ''
+        EA_DISCORD_${lib.toUpper id}=$(cat /run/secrets/${agent.discordTokenSecret} 2>/dev/null || echo "")
+        if [ -n "$EA_DISCORD_${lib.toUpper id}" ]; then
+          rm -f "$TEMP.new"
+          ${jqBin} --arg token "$EA_DISCORD_${lib.toUpper id}" '.channels.discord.accounts.${id}.token = $token' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
+        fi
+          '')
+          + (lib.optionalString (agent.telegramTokenSecret != null) ''
+        EA_TELEGRAM_${lib.toUpper id}=$(cat /run/secrets/${agent.telegramTokenSecret} 2>/dev/null || echo "")
+        if [ -n "$EA_TELEGRAM_${lib.toUpper id}" ]; then
+          rm -f "$TEMP.new"
+          ${jqBin} --arg token "$EA_TELEGRAM_${lib.toUpper id}" '.channels.telegram.accounts.${id}.botToken = $token' "$TEMP" > "$TEMP.new" && mv "$TEMP.new" "$TEMP"
+        fi
+          '')
+        ) cfg.extraAgents)}
         if [ -s "$TEMP" ] && ${jqBin} empty "$TEMP" 2>/dev/null; then
           mv "$TEMP" "$CONFIG"
           chown openclaw:openclaw "$CONFIG"
@@ -420,11 +471,11 @@ ENVEOF
 
     # ── Personality files ────────────────────────────────────────────────────
     system.activationScripts.openclawPersonality = lib.mkIf cfg.deployPersonalityFiles { text = ''
-      WORKDIR="${cfg.workDir}"
-      mkdir -p "$WORKDIR/memory"
-      chown -R openclaw:openclaw /var/lib/openclaw 2>/dev/null || true
-      deploy_file() { local path="$1"; local content="$2"; if [ ! -f "$path" ]; then echo "$content" > "$path"; chown openclaw:openclaw "$path"; fi; }
-      deploy_file "$WORKDIR/SOUL.md" "# SOUL.md - Who You Are
+      deploy_personality() {
+        local WORKDIR="$1"
+        mkdir -p "$WORKDIR/memory"
+        deploy_file() { local path="$1"; local content="$2"; if [ ! -f "$path" ]; then echo "$content" > "$path"; chown openclaw:openclaw "$path"; fi; }
+        deploy_file "$WORKDIR/SOUL.md" "# SOUL.md - Who You Are
 _You are not a chatbot. You are becoming someone._
 ## Core Truths
 **Be genuinely helpful, not performatively helpful.**
@@ -435,19 +486,19 @@ _You are not a chatbot. You are becoming someone._
 Direct. Competent. No corporate speak.
 ## Continuity
 Each session you wake up fresh. These files are your memory. Read them. Update them."
-      deploy_file "$WORKDIR/NAMING_GUIDANCE.md" "# NAMING_GUIDANCE.md
+        deploy_file "$WORKDIR/NAMING_GUIDANCE.md" "# NAMING_GUIDANCE.md
 ## Rules
 1. Real human name only
 2. NOT concept words
 3. Not Marc's name
 4. Short preferred
 5. Something you actually like"
-      deploy_file "$WORKDIR/IDENTITY.md" "# IDENTITY.md - Who Am I?
+        deploy_file "$WORKDIR/IDENTITY.md" "# IDENTITY.md - Who Am I?
 - **Name:**
 - **Creature:**
 - **Vibe:**
 - **Emoji:**"
-      deploy_file "$WORKDIR/AGENTS.md" "# AGENTS.md
+        deploy_file "$WORKDIR/AGENTS.md" "# AGENTS.md
 ## Session Startup
 1. Read SOUL.md
 2. Read USER.md
@@ -455,11 +506,19 @@ Each session you wake up fresh. These files are your memory. Read them. Update t
 ## Red Lines
 - Do not exfiltrate private data. Ever.
 - When in doubt, ask."
-      deploy_file "$WORKDIR/USER.md" "# USER.md - About Your Human
+        deploy_file "$WORKDIR/USER.md" "# USER.md - About Your Human
 - **Name:** ${cfg.userName}
 - **Timezone:** America/New_York"
-      deploy_file "$WORKDIR/TOOLS.md" "# TOOLS.md - Local Notes
+        deploy_file "$WORKDIR/TOOLS.md" "# TOOLS.md - Local Notes
 Add SSH hosts, device names, and other setup-specific notes here."
+      }
+      # Deploy to main workspace
+      deploy_personality "${cfg.workDir}"
+      # Deploy to extra agent workspaces
+      ${lib.concatStringsSep "\n" (lib.mapAttrsToList (_id: agent: ''
+      deploy_personality "${agent.workspace}"
+      '') cfg.extraAgents)}
+      chown -R openclaw:openclaw /var/lib/openclaw 2>/dev/null || true
     ''; deps = []; };
 
     # ── Systemd service ──────────────────────────────────────────────────────
