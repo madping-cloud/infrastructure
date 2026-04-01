@@ -19,7 +19,7 @@
   sops.secrets.anthropic_api_key = { sopsFile = "/etc/nixos/secrets/${host}/siem.yaml"; key = "anthropic_api_key"; };
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
-    gateway.allowedOrigins = [ "https://192.168.4.6" "https://192.168.4.6:18010" "https://10.100.0.1" "https://10.100.0.1:18010" ];
+    gateway.allowedOrigins = [ "https://192.168.4.6" "https://192.168.4.6:18005" "https://10.100.0.1" "https://10.100.0.1:18005" ];
     gateway.bind = "lan";
     tools.sessionsVisibility = "all";
     tools.agentToAgent = true;
