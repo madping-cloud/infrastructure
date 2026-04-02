@@ -32,6 +32,7 @@
     subagentsMaxConcurrent = 2;
     primaryModel = "google/gemini-2.5-flash";
     fallbackModels = [ "openrouter/deepseek/deepseek-v3.2" "google/gemini-2.5-flash-lite" ];
+    # NOTE: DeepSeek/Qwen allowed for Aurora only — she's Connie's companion, non-business
     availableModels = [
       # Google (direct — default voice, warm and conversational)
       "google/gemini-2.5-flash"

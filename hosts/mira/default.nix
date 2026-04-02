@@ -43,7 +43,9 @@
       "anthropic/claude-haiku-4-5"
       "google/gemini-2.5-pro"
       "google/gemini-2.5-flash"
-      "openrouter/mistralai/mistral-large"
+      "x-ai/grok-4.20-0309-non-reasoning"
+      "x-ai/grok-imagine-image"
+      "openrouter/mistralai/mistral-small-2603"
       "openrouter/meta-llama/llama-4-maverick"
     ];
     modelAliases = {
@@ -52,8 +54,19 @@
       "anthropic/claude-haiku-4-5"             = "haiku";
       "google/gemini-2.5-pro"                  = "gemini-pro";
       "google/gemini-2.5-flash"                = "gemini-flash";
-      "openrouter/mistralai/mistral-large"     = "mistral-large";
+      "x-ai/grok-4.20-0309-non-reasoning"     = "grok";
+      "x-ai/grok-imagine-image"               = "grok-imagine";
+      "openrouter/mistralai/mistral-small-2603" = "mistral-small";
       "openrouter/meta-llama/llama-4-maverick" = "llama-maverick";
+    };
+    # xAI custom provider — Grok for chat + Grok Imagine for image generation
+    customModelProviders.xai = {
+      baseUrl = "https://api.x.ai/v1";
+      api = "openai-responses";
+      models = [
+        { id = "grok-4.20-0309-non-reasoning"; name = "Grok 4.20"; reasoning = false; input = [ "text" "image" ]; cost = { input = 2; output = 6; cacheRead = 0.2; cacheWrite = 0; }; contextWindow = 2000000; maxTokens = 30000; }
+        { id = "grok-imagine-image"; name = "Grok Imagine (Image)"; reasoning = false; input = [ "text" "image" ]; cost = { input = 0; output = 0; cacheRead = 0; cacheWrite = 0; }; contextWindow = 4096; maxTokens = 1; }
+      ];
     };
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];
