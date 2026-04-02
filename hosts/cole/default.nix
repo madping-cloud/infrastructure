@@ -24,6 +24,7 @@
   sops.secrets.xai_api_key         = { sopsFile = "/etc/nixos/secrets/${host}/cole.yaml"; key = "xai_api_key"; };
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
+    messages.debounceMs = 500;  # faster followup when steer can't inject mid-tool
     maxConcurrent = 3;
     subagentsMaxConcurrent = 4;
     primaryModel = "anthropic/claude-sonnet-4-6";

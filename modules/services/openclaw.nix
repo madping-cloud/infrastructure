@@ -57,6 +57,7 @@ let
     messages = {
       ackReactionScope = "group-mentions";
       queue.mode = cfg.messages.queueMode;
+      queue.debounceMs = cfg.messages.debounceMs;
     };
     commands = { native = "auto"; nativeSkills = "auto"; restart = true; };
     session.dmScope = cfg.session.dmScope;
@@ -235,6 +236,7 @@ in
 
     # ── Messages options ────────────────────────────────────────────────────
     messages.queueMode = lib.mkOption { type = lib.types.str; default = "steer"; };
+    messages.debounceMs = lib.mkOption { type = lib.types.int; default = 1000; };
 
     # ── Session options ──────────────────────────────────────────────────────
     session.dmScope = lib.mkOption { type = lib.types.str; default = "per-channel-peer"; };

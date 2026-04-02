@@ -31,6 +31,7 @@
     tools.sessionsVisibility = "all";
     tools.agentToAgent = true;
     gateway.httpToolsAllow = [ "sessions_send" "sessions_spawn" ];
+    messages.debounceMs = 500;  # faster followup when steer can't inject mid-tool
     userName = "Marc";
     maxConcurrent = 5;          # gateway-wide: Atlas 3 + Morgan 2
     subagentsMaxConcurrent = 8; # shared pool for both agents
