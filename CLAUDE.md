@@ -11,13 +11,14 @@ Pull-based GitOps infrastructure for NixOS containers on Debian hosts using Incu
 **Hosts** (Debian + Incus): Thor (10.100.0.1), Loki (planned)
 **Containers** (NixOS 25.11 on Thor):
 
-| Agent | Name | Role | Primary Model | Auth | Tier |
-|-------|------|------|---------------|------|------|
-| atlas | Atlas | COO — company ops, content pipeline, business strategy | sonnet-4-6 | Max sub | 1 — sessions_spawn |
+| Container | Agent(s) | Role | Primary Model | Auth | Tier |
+|-----------|----------|------|---------------|------|------|
+| atlas | Atlas + Morgan | COO + Monitoring Lead (two agents, one gateway) | sonnet-4-6 / haiku-4-5 | Max sub | 1 — sessions_spawn + cron |
 | cole | Cole | Infrastructure Lead — all infra, VMs, networking, deploys | sonnet-4-6 | Max sub | 1 — sessions_spawn |
-| siem | Morgan | Monitoring Lead — security, uptime, infra health, metrics | haiku-4-5 | Max sub | 1 — sessions_spawn + cron |
 | mira | Mira | Independent — adult content | sonnet-4-6 | Anthropic API | 2 |
 | aurora | Aurora | Companion — Connie's chatbot | gemini-flash | Google AI | 3 — non-Anthropic |
+
+**Multi-agent on atlas:** Morgan runs as an `extraAgent` on Atlas's gateway, with separate workspace (`/var/lib/openclaw/workspace-morgan`), own Discord/Telegram bots, and channel routing bindings. This enables native agent-to-agent communication (`sessions_send`, `sessions_spawn`) between Atlas and Morgan without cross-gateway federation (which OpenClaw does not support).
 
 Every container's NixOS config is built from a module stack applied by `lib/default.nix`'s `mkAgent` helper:
 1. `sops-nix` — secret decryption
@@ -73,15 +74,16 @@ nix develop
 
 ## Inter-Agent Communication
 
-Agents communicate via gateway-to-gateway HTTP using a shared `peer_gateway_token`. Each agent gets `/run/openclaw-peers.json` with peer URLs at deploy time.
+**Same-gateway agents (Atlas ↔ Morgan):** Atlas and Morgan share a gateway on the `atlas` container. They communicate natively via `sessions_send` and `sessions_spawn` — no network calls needed. Channel routing uses `bindings[]` with `accountId` matching to direct Discord/Telegram messages to the correct agent.
 
-**Required per-agent config for inter-agent comms:**
-- `gateway.bind = "lan"` — bind to network interface
-- `tools.sessionsVisibility = "all"` — see all sessions
+**Cross-gateway agents (Atlas/Morgan ↔ Cole):** Cole runs on a separate gateway. OpenClaw has **no cross-gateway federation** — the peer roster (`/run/openclaw-peers.json`) is dead code. Cross-gateway communication is not currently possible. If needed in the future, it would require an OpenClaw feature addition or an external bridge.
+
+**Required gateway config for agent-to-agent comms (same gateway):**
 - `tools.agentToAgent = true` — enable cross-agent targeting
-- `gateway.httpToolsAllow = [ "sessions_send" ]` — allow inbound session messages
+- `tools.sessionsVisibility = "all"` — see all sessions
+- `gateway.httpToolsAllow = [ "sessions_send" "sessions_spawn" ]` — allow session tools
 
-Atlas, Cole, and Morgan all have `sessions_spawn` capability. Each lead agent manages a team of subagents:
+Each lead agent manages a team of subagents:
 - **Atlas (COO)**: VP Content, VP Marketing, Script Writer, Research Analyst, Creative Director, Production Coord, Finance Analyst
 - **Cole (Infra Lead)**: DevOps Engineer, Network Engineer, VM Provisioner, Automation Engineer
 - **Morgan (Monitoring)**: Threat Analyst, Alert Dispatcher, Uptime Monitor drones, Log Analyzer drones, Infra Health drones
@@ -117,6 +119,8 @@ Agent personality files (SOUL.md, IDENTITY.md, AGENTS.md, USER.md, TOOLS.md) liv
 - Nix sandbox is disabled (LXC incompatibility)
 - OpenClaw config is fully declarative via `services.openclaw.*` options in host configs — the module regenerates `openclaw.json` from scratch on every deploy
 - Structured logging format: `level= action= host= msg= key=value`
+- Atlas and Morgan share the `atlas` container (multi-agent gateway); Cole has its own container
 - Atlas, Cole, and Morgan run on Claude Max subscription; Mira uses Anthropic API; Aurora uses Google AI
 - Atlas has NO root access to Thor — Cole handles all infrastructure changes
 - Morgan owns ALL scheduled monitoring (cron) — security + infra health consolidated under one agent
+- Multi-agent config uses `extraAgents` option in `openclaw.nix` — per-agent model, workspace, tools, and channel bindings; `maxConcurrent` and `availableModels` are gateway-wide (not per-agent)

@@ -412,7 +412,7 @@ ENVEOF
         done
         chown -R openclaw:openclaw /var/lib/openclaw/.openclaw/agents
       fi
-    ''; deps = [ "openclawConfig" "openclawAgentDirs" "setupSecrets" ]; };
+    ''; deps = [ "openclawConfig" "setupSecrets" ] ++ lib.optional (cfg.extraAgents != {}) "openclawAgentDirs"; };
 
     # ── Channel secret injection (tokens from sops into openclaw.json) ───────
     system.activationScripts.openclawChannelPatch = { text = ''
