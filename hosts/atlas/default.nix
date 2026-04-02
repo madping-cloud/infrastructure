@@ -108,11 +108,6 @@
   systemd.tmpfiles.rules = [
     "d /var/tmp/openclaw-compile-cache 0755 openclaw openclaw -"
   ];
-  # 4GB swapfile — headroom for concurrent subagents + headless Chromium
-  swapDevices = [{
-    device = "/var/swapfile";
-    size = 4096;  # MiB
-  }];
 
   environment.systemPackages = with pkgs; [ socat gh chromium ];
 
