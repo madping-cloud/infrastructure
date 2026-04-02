@@ -22,6 +22,24 @@ deploy_container() {
   local CONTAINER="$1"
   echo "==> Deploying to container: $CONTAINER"
 
+  # Preserve agent memory files before deploy
+  local MEMORY_BACKUP="/tmp/openclaw-memory-${CONTAINER}"
+  rm -rf "$MEMORY_BACKUP"
+  if incus exec "$CONTAINER" -- test -d /var/lib/openclaw 2>/dev/null; then
+    echo "==> Backing up memory files..."
+    mkdir -p "$MEMORY_BACKUP"
+    incus exec "$CONTAINER" -- bash -c '
+      cd /var/lib/openclaw
+      find . -path "*/memory/*.md" -o -name "MEMORY.md" | grep -v node_modules
+    ' 2>/dev/null | while read -r f; do
+      mkdir -p "$MEMORY_BACKUP/$(dirname "$f")"
+      incus file pull "$CONTAINER/var/lib/openclaw/$f" "$MEMORY_BACKUP/$f" 2>/dev/null || true
+    done
+    local BACKED_UP
+    BACKED_UP=$(find "$MEMORY_BACKUP" -name "*.md" 2>/dev/null | wc -l)
+    echo "    $BACKED_UP memory file(s) backed up"
+  fi
+
   # Sync nix config
   echo "==> Syncing configuration..."
   incus exec "$CONTAINER" -- mkdir -p /etc/nixos
@@ -80,6 +98,21 @@ deploy_container() {
       echo "==> Restarting openclaw-gateway..."
       incus exec "$CONTAINER" -- systemctl restart openclaw-gateway
     fi
+
+    # Restore memory files after deploy
+    if [ -d "$MEMORY_BACKUP" ] && [ "$(find "$MEMORY_BACKUP" -name "*.md" 2>/dev/null | wc -l)" -gt 0 ]; then
+      echo "==> Restoring memory files..."
+      cd "$MEMORY_BACKUP"
+      find . -name "*.md" | while read -r f; do
+        local dest="/var/lib/openclaw/$f"
+        incus exec "$CONTAINER" -- mkdir -p "$(dirname "$dest")"
+        incus file push "$MEMORY_BACKUP/$f" "$CONTAINER$dest" 2>/dev/null || true
+      done
+      incus exec "$CONTAINER" -- bash -c 'chown -R openclaw:openclaw /var/lib/openclaw/' 2>/dev/null
+      echo "    Memory restored"
+      cd "$WORKSPACE"
+    fi
+    rm -rf "$MEMORY_BACKUP"
 
     echo "==> Deploy complete: $CONTAINER"
     incus exec "$CONTAINER" -- nixos-version
