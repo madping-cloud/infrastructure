@@ -108,7 +108,13 @@
   systemd.tmpfiles.rules = [
     "d /var/tmp/openclaw-compile-cache 0755 openclaw openclaw -"
   ];
-  environment.systemPackages = with pkgs; [ socat gh ];
+  # 4GB swapfile — headroom for concurrent subagents + headless Chromium
+  swapDevices = [{
+    device = "/var/swapfile";
+    size = 4096;  # MiB
+  }];
+
+  environment.systemPackages = with pkgs; [ socat gh chromium ];
 
 
   # OpenClaw GUI bridge — expose port 18790 for nginx reverse proxy on Thor
