@@ -35,17 +35,21 @@ let
 
   baseConfig = {
     meta = {};
-    agents.defaults = {
-      model = {
-        primary = cfg.primaryModel;
-        fallbacks = cfg.fallbackModels;
-      };
-      models = availableModelsAttr;
-      workspace = cfg.workDir;
-      compaction.mode = "safeguard";
-      maxConcurrent = cfg.maxConcurrent;
-      subagents.maxConcurrent = cfg.subagentsMaxConcurrent;
-    };
+    agents = {
+      defaults = {
+        model = {
+          primary = cfg.primaryModel;
+          fallbacks = cfg.fallbackModels;
+        };
+        models = availableModelsAttr;
+        workspace = cfg.workDir;
+        compaction.mode = "safeguard";
+        maxConcurrent = cfg.maxConcurrent;
+        subagents.maxConcurrent = cfg.subagentsMaxConcurrent;
+      } // (lib.optionalAttrs (cfg.subagentModel != null) {
+        subagents.model = cfg.subagentModel;
+      });
+    } // (lib.optionalAttrs (cfg.extraAgents != {}) { list = agentsList; });
     tools = {
       web = {
         search = { enabled = true; provider = cfg.webSearch.provider; };
@@ -80,8 +84,6 @@ let
     plugins.entries.duckduckgo.enabled = true;
     plugins.entries.tavily.enabled = cfg.webSearch.tavily.enable;
   }
-  # Add agents.list when extraAgents are configured
-  // (lib.optionalAttrs (cfg.extraAgents != {}) { agents.list = agentsList; })
   # Add bindings when extraAgents have them
   // (lib.optionalAttrs (allBindings != []) { bindings = allBindings; });
 
@@ -159,6 +161,11 @@ in
       type = lib.types.int;
       default = 8;
       description = "Max concurrent subagent sessions — gateway-wide, shared across all agents (agents.defaults.subagents.maxConcurrent)";
+    };
+    subagentModel = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Default model for subagents spawned by the main agent (agents.defaults.subagents.model). Agents can override at spawn time.";
     };
 
     # ── Model options ──────────────────────────────────────────────────────────
