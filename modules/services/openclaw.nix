@@ -186,7 +186,7 @@ in
       description = "When true, OpenClaw attaches to existing Chromium via cdpUrl instead of launching its own";
     };
     browser.profiles = lib.mkOption {
-      type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
+      type = lib.types.attrsOf lib.types.attrs;
       default = {};
       description = "Named browser profiles with CDP endpoints";
     };

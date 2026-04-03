@@ -76,7 +76,10 @@
     };
     browser.cdpUrl = "ws://127.0.0.1:18800";
     browser.attachOnly = true;
-    browser.profiles.openclaw.cdpUrl = "http://127.0.0.1:18800";
+    browser.profiles.openclaw = {
+      cdpUrl = "http://127.0.0.1:18800";
+      color = "#4A90D9";
+    };
     webSearch.provider = "tavily";
     webSearch.tavily.enable = true;
     discord.enable = true;
