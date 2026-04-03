@@ -104,6 +104,8 @@
   systemd.services.openclaw-gateway.environment = {
     NODE_COMPILE_CACHE = "/var/tmp/openclaw-compile-cache";
     OPENCLAW_NO_RESPAWN = "1";
+    DISPLAY = ":99";
+    DBUS_SESSION_BUS_ADDRESS = "disabled:";
   };
   systemd.tmpfiles.rules = [
     "d /var/tmp/openclaw-compile-cache 0755 openclaw openclaw -"
