@@ -15,7 +15,7 @@ Pull-based GitOps infrastructure for NixOS containers on Debian hosts using Incu
 |-----------|----------|------|---------------|------|------|
 | atlas | Atlas + Morgan | COO + Monitoring Lead (two agents, one gateway) | sonnet-4-6 / haiku-4-5 | Max sub | 1 — sessions_spawn + cron |
 | cole | Cole | Infrastructure Lead — all infra, VMs, networking, deploys | sonnet-4-6 | Max sub | 1 — sessions_spawn |
-| mira | Mira | Independent — adult content | sonnet-4-6 | Anthropic API | 2 |
+| mira | Mira | Writing Team Lead — adult naturism/nudism fiction (11 subagents) | sonnet-4-6 | Anthropic API | 1 — sessions_spawn + cron |
 | aurora | Aurora | Companion — Connie's chatbot | gemini-flash | Google AI | 3 — non-Anthropic |
 
 **Multi-agent on atlas:** Morgan runs as an `extraAgent` on Atlas's gateway, with separate workspace (`/var/lib/openclaw/workspace-morgan`), own Discord/Telegram bots, and channel routing bindings. This enables native agent-to-agent communication (`sessions_send`, `sessions_spawn`) between Atlas and Morgan without cross-gateway federation (which OpenClaw does not support).
@@ -87,6 +87,7 @@ Each lead agent manages a team of subagents:
 - **Atlas (COO)**: VP Content, VP Marketing, Script Writer, Research Analyst, Creative Director, Production Coord, Finance Analyst
 - **Cole (Infra Lead)**: DevOps Engineer, Network Engineer, VM Provisioner, Automation Engineer
 - **Morgan (Monitoring)**: Threat Analyst, Alert Dispatcher, Uptime Monitor drones, Log Analyzer drones, Infra Health drones
+- **Mira (Writing Lead)**: Aria (Story Architect), Lena (Character Designer), Sable (Research), Iris (World Builder), Cass (Dialogue), Thea (Prose Editor), Freya (Continuity), Sage (Sensitivity Reviewer), Remy (Beta Reader), Elise (Publishing Prep), Sloane (Marketing Strategist)
 
 Persistent subagents are resumed via `sessions_send`. On-demand subagents are spawned fresh. Morgan's drone subagents run on cron schedules using cheap OpenRouter models (Llama-Scout, Gemini-Flash-Lite).
 
@@ -123,4 +124,5 @@ Agent personality files (SOUL.md, IDENTITY.md, AGENTS.md, USER.md, TOOLS.md) liv
 - Atlas, Cole, and Morgan run on Claude Max subscription; Mira uses Anthropic API; Aurora uses Google AI
 - Atlas has NO root access to Thor — Cole handles all infrastructure changes
 - Morgan owns ALL scheduled monitoring (cron) — security + infra health consolidated under one agent
+- Mira leads an 11-member writing team for adult fiction; subagents use mistral-small ($0.15/1M) by default; pipelines: pre-writing (research/plot/characters) → drafting (Mira) → review (edit/dialogue/continuity) → sensitivity/beta → publishing/marketing
 - Multi-agent config uses `extraAgents` option in `openclaw.nix` — per-agent model, workspace, tools, and channel bindings; `maxConcurrent` and `availableModels` are gateway-wide (not per-agent)
