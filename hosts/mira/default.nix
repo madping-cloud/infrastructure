@@ -30,9 +30,9 @@
     gateway.httpToolsAllow = [ "sessions_send" "sessions_spawn" ];
     toolsAllow = [ "cron" ];
     userName = "Marc";
-    maxConcurrent = 4;
-    subagentsMaxConcurrent = 8;
-    subagentModel = "openrouter/mistralai/mistral-small-2603";
+    maxConcurrent = 5;
+    subagentsMaxConcurrent = 10;
+    subagentModel = "anthropic/claude-haiku-4-5";
     primaryModel = "anthropic/claude-sonnet-4-6";
     fallbackModels = [
       "anthropic/claude-haiku-4-5"
