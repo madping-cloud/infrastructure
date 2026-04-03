@@ -107,6 +107,7 @@
   };
   systemd.tmpfiles.rules = [
     "d /var/tmp/openclaw-compile-cache 0755 openclaw openclaw -"
+    "L+ /usr/bin/google-chrome - - - - /run/current-system/sw/bin/chromium"
   ];
 
   environment.systemPackages = with pkgs; [ socat gh chromium ];
