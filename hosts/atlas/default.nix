@@ -105,15 +105,30 @@
     NODE_COMPILE_CACHE = "/var/tmp/openclaw-compile-cache";
     OPENCLAW_NO_RESPAWN = "1";
     DISPLAY = ":99";
-    DBUS_SESSION_BUS_ADDRESS = "disabled:";
-    CHROMIUM_FLAGS = "--disable-dev-shm-usage";
+    DBUS_SESSION_BUS_ADDRESS = "/dev/null";
+    CHROMIUM_FLAGS = "--disable-dev-shm-usage --no-sandbox --disable-gpu";
   };
+
+  # Xvfb virtual framebuffer — Chromium needs a DISPLAY even in headless mode
+  systemd.services.xvfb = {
+    description = "Xvfb virtual framebuffer on :99";
+    wantedBy = [ "multi-user.target" ];
+    before = [ "openclaw-gateway.service" ];
+    serviceConfig = {
+      ExecStart = "${pkgs.xorg.xorgserver}/bin/Xvfb :99 -screen 0 1920x1080x24 -nolisten tcp";
+      Restart = "always";
+      RestartSec = "2s";
+    };
+  };
+  systemd.services.openclaw-gateway.after = [ "xvfb.service" ];
+  systemd.services.openclaw-gateway.requires = [ "xvfb.service" ];
+
   systemd.tmpfiles.rules = [
     "d /var/tmp/openclaw-compile-cache 0755 openclaw openclaw -"
     "L+ /usr/bin/google-chrome - - - - /run/current-system/sw/bin/chromium"
   ];
 
-  environment.systemPackages = with pkgs; [ socat gh chromium ];
+  environment.systemPackages = with pkgs; [ socat gh chromium xorg.xorgserver ];
 
 
   # OpenClaw GUI bridge — expose port 18790 for nginx reverse proxy on Thor
