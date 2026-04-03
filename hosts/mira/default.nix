@@ -28,7 +28,8 @@
     tools.sessionsVisibility = "all";
     tools.agentToAgent = true;
     gateway.httpToolsAllow = [ "sessions_send" "sessions_spawn" ];
-    toolsAllow = [ "cron" ];
+    toolsAllow = [ "cron" "sessions_send" "sessions_spawn" ];
+    messages.debounceMs = 500;  # faster followup during pipeline work
     userName = "Marc";
     maxConcurrent = 5;
     subagentsMaxConcurrent = 10;
@@ -49,6 +50,7 @@
       "x-ai/grok-imagine-image"
       "openrouter/mistralai/mistral-small-2603"
       "openrouter/meta-llama/llama-4-maverick"
+      "openrouter/meta-llama/llama-4-scout"
     ];
     modelAliases = {
       "anthropic/claude-sonnet-4-6"            = "sonnet";
@@ -60,6 +62,7 @@
       "x-ai/grok-imagine-image"               = "grok-imagine";
       "openrouter/mistralai/mistral-small-2603" = "mistral-small";
       "openrouter/meta-llama/llama-4-maverick" = "llama-maverick";
+      "openrouter/meta-llama/llama-4-scout"    = "llama-scout";
     };
     # xAI custom provider — Grok for chat + Grok Imagine for image generation
     customModelProviders.xai = {
@@ -72,6 +75,8 @@
     };
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];
+    discord.threadBindings.enable = true;
+    discord.threadBindings.spawnSubagentSessions = true;
     telegram.enable = true;
     telegram.allowFrom = [ "5201076941" ];
   };
