@@ -33,12 +33,11 @@
     userName = "Marc";
     maxConcurrent = 5;
     subagentsMaxConcurrent = 10;
-    subagentModel = "anthropic/claude-haiku-4-5";
-    primaryModel = "anthropic/claude-sonnet-4-6";
+    subagentModel = "x-ai/grok-4.20-0309-non-reasoning";
+    primaryModel = "x-ai/grok-4.20-0309-non-reasoning";
     fallbackModels = [
-      "anthropic/claude-haiku-4-5"
       "openrouter/mistralai/mistral-large-2411"
-      "google/gemini-2.5-pro"
+      "anthropic/claude-sonnet-4-6"
       "openrouter/meta-llama/llama-4-maverick"
     ];
     availableModels = [
