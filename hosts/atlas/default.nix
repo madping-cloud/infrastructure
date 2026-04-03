@@ -106,6 +106,7 @@
     OPENCLAW_NO_RESPAWN = "1";
     DISPLAY = ":99";
     DBUS_SESSION_BUS_ADDRESS = "disabled:";
+    CHROMIUM_FLAGS = "--disable-dev-shm-usage";
   };
   systemd.tmpfiles.rules = [
     "d /var/tmp/openclaw-compile-cache 0755 openclaw openclaw -"
