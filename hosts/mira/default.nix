@@ -37,6 +37,7 @@
     primaryModel = "anthropic/claude-sonnet-4-6";
     fallbackModels = [
       "anthropic/claude-haiku-4-5"
+      "openrouter/mistralai/mistral-large-2411"
       "google/gemini-2.5-pro"
       "openrouter/meta-llama/llama-4-maverick"
     ];
@@ -48,6 +49,7 @@
       "google/gemini-2.5-flash"
       "x-ai/grok-4.20-0309-non-reasoning"
       "x-ai/grok-imagine-image"
+      "openrouter/mistralai/mistral-large-2411"
       "openrouter/mistralai/mistral-small-2603"
       "openrouter/meta-llama/llama-4-maverick"
       "openrouter/meta-llama/llama-4-scout"
@@ -60,6 +62,7 @@
       "google/gemini-2.5-flash"                = "gemini-flash";
       "x-ai/grok-4.20-0309-non-reasoning"     = "grok";
       "x-ai/grok-imagine-image"               = "grok-imagine";
+      "openrouter/mistralai/mistral-large-2411"  = "mistral-large";
       "openrouter/mistralai/mistral-small-2603" = "mistral-small";
       "openrouter/meta-llama/llama-4-maverick" = "llama-maverick";
       "openrouter/meta-llama/llama-4-scout"    = "llama-scout";
