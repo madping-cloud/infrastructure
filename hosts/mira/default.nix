@@ -89,8 +89,37 @@
   };
   systemd.tmpfiles.rules = [
     "d /var/tmp/openclaw-compile-cache 0755 openclaw openclaw -"
+    "d /var/lib/openclaw/workspace-backups 0750 openclaw openclaw -"
   ];
-  environment.systemPackages = with pkgs; [ socat ];
+
+  # Workspace backup — snapshot every 5 minutes, keep last 24 snapshots (2 hours)
+  systemd.services.workspace-backup = {
+    description = "Backup Mira's OpenClaw workspace";
+    serviceConfig = {
+      Type = "oneshot";
+      User = "openclaw";
+      Group = "openclaw";
+      ExecStart = pkgs.writeShellScript "workspace-backup" ''
+        BACKUP_DIR="/var/lib/openclaw/workspace-backups"
+        TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+        SNAP="$BACKUP_DIR/$TIMESTAMP"
+        ${pkgs.coreutils}/bin/cp -a /var/lib/openclaw/workspace "$SNAP"
+        # Keep only last 24 snapshots
+        ls -1dt "$BACKUP_DIR"/20* 2>/dev/null | tail -n +25 | xargs rm -rf 2>/dev/null || true
+      '';
+    };
+  };
+  systemd.timers.workspace-backup = {
+    description = "Backup Mira's workspace every 5 minutes";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "2min";
+      OnUnitActiveSec = "5min";
+      Persistent = true;
+    };
+  };
+
+  environment.systemPackages = with pkgs; [ socat gh ];
 
 
   # OpenClaw GUI bridge — expose port 18790 for nginx reverse proxy on Thor
