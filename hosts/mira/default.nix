@@ -28,7 +28,6 @@
     tools.sessionsVisibility = "all";
     tools.agentToAgent = true;
     gateway.httpToolsAllow = [ "sessions_send" "sessions_spawn" ];
-    toolsAllow = [ "sessions_send" "sessions_spawn" ];
     messages.debounceMs = 500;  # faster followup during pipeline work
     userName = "Marc";
     maxConcurrent = 5;
