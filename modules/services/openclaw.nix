@@ -134,7 +134,10 @@ let
 
   fullConfig = baseConfig
     // lib.optionalAttrs (channelsAttr != {}) { channels = channelsAttr; }
-    // lib.optionalAttrs (cfg.customModelProviders != {}) { models = { mode = "merge"; providers = cfg.customModelProviders; }; };
+    // lib.optionalAttrs (cfg.customModelProviders != {}) { models = { mode = "merge"; providers = cfg.customModelProviders; }; }
+    // lib.optionalAttrs (cfg.browser.cdpUrl != null) {
+      browser = { cdpUrl = cfg.browser.cdpUrl; } // lib.optionalAttrs cfg.browser.attachOnly { attachOnly = true; };
+    };
   configJson = builtins.toJSON fullConfig;
 
   # List of all agent IDs (main + extras) for activation scripts
@@ -166,6 +169,18 @@ in
       type = lib.types.nullOr lib.types.str;
       default = null;
       description = "Default model for subagents spawned by the main agent (agents.defaults.subagents.model). Agents can override at spawn time.";
+    };
+
+    # ── Browser options ─────────────────────────────────────────────────────────
+    browser.cdpUrl = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "CDP WebSocket URL to attach to an existing Chromium instance";
+    };
+    browser.attachOnly = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "When true, OpenClaw attaches to existing Chromium via cdpUrl instead of launching its own";
     };
 
     # ── Model options ──────────────────────────────────────────────────────────
@@ -558,12 +573,31 @@ Add SSH hosts, device names, and other setup-specific notes here."
           '';
         in pkgs.writeShellScript "openclaw-prestart" ''
           NPM_BIN="/var/lib/openclaw/.npm-global/bin/openclaw"
+          STAMP="/var/lib/openclaw/.openclaw/.update-stamp"
           if [ ! -f "$NPM_BIN" ]; then
             echo "OpenClaw not found — installing ${pkg} via npm..."
             npm install -g ${pkg}
             echo "OpenClaw installed successfully"
+            date +%s > "$STAMP"
           else
-            echo "OpenClaw found at $NPM_BIN"
+            # Check for updates at most once per day
+            NOW=$(date +%s)
+            LAST=$(cat "$STAMP" 2>/dev/null || echo 0)
+            AGE=$(( NOW - LAST ))
+            if [ "$AGE" -gt 86400 ]; then
+              CURRENT=$(npm list -g openclaw --json 2>/dev/null | ${jqBin} -r '.dependencies.openclaw.version // "unknown"')
+              LATEST=$(npm view openclaw version 2>/dev/null || echo "unknown")
+              if [ "$CURRENT" != "$LATEST" ] && [ "$LATEST" != "unknown" ]; then
+                echo "OpenClaw $CURRENT -> $LATEST — upgrading..."
+                npm install -g ${pkg}
+                echo "OpenClaw upgraded to $LATEST"
+              else
+                echo "OpenClaw $CURRENT is current"
+              fi
+              date +%s > "$STAMP"
+            else
+              echo "OpenClaw update check skipped (last check $(( AGE / 60 ))m ago)"
+            fi
           fi
           ${channelCleanup}
         '';

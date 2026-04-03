@@ -74,6 +74,8 @@
       "openrouter/inception/mercury-2"          = "mercury";           # $0.25/1M — 1000+ tok/s, text-only
       "openrouter/google/gemini-2.5-flash-lite" = "or-gemini-lite";    # OpenRouter path for Gemini lite
     };
+    browser.cdpUrl = "ws://127.0.0.1:18800";
+    browser.attachOnly = true;
     webSearch.provider = "tavily";
     webSearch.tavily.enable = true;
     discord.enable = true;
@@ -104,27 +106,46 @@
   systemd.services.openclaw-gateway.environment = {
     NODE_COMPILE_CACHE = "/var/tmp/openclaw-compile-cache";
     OPENCLAW_NO_RESPAWN = "1";
-    DISPLAY = ":99";
-    DBUS_SESSION_BUS_ADDRESS = "/dev/null";
-    CHROMIUM_FLAGS = "--disable-dev-shm-usage --no-sandbox --disable-gpu";
   };
 
   # Xvfb virtual framebuffer — Chromium needs a DISPLAY even in headless mode
   systemd.services.xvfb = {
     description = "Xvfb virtual framebuffer on :99";
     wantedBy = [ "multi-user.target" ];
-    before = [ "openclaw-gateway.service" ];
+    before = [ "chromium-cdp.service" ];
     serviceConfig = {
       ExecStart = "${pkgs.xorg.xorgserver}/bin/Xvfb :99 -screen 0 1920x1080x24 -nolisten tcp";
       Restart = "always";
       RestartSec = "2s";
     };
   };
-  systemd.services.openclaw-gateway.after = [ "xvfb.service" ];
-  systemd.services.openclaw-gateway.requires = [ "xvfb.service" ];
+
+  # Persistent headless Chromium with CDP on port 18800
+  systemd.services.chromium-cdp = {
+    description = "Headless Chromium with Chrome DevTools Protocol";
+    after = [ "xvfb.service" ];
+    requires = [ "xvfb.service" ];
+    wantedBy = [ "multi-user.target" ];
+    before = [ "openclaw-gateway.service" ];
+    environment = {
+      DISPLAY = ":99";
+      DBUS_SESSION_BUS_ADDRESS = "/dev/null";
+    };
+    serviceConfig = {
+      User = "openclaw";
+      Group = "openclaw";
+      ExecStart = "${pkgs.chromium}/bin/chromium --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --remote-debugging-port=18800 --remote-debugging-address=127.0.0.1 --user-data-dir=/var/lib/openclaw/.chromium-data";
+      Restart = "always";
+      RestartSec = "3s";
+    };
+  };
+
+  systemd.services.openclaw-gateway.after = [ "chromium-cdp.service" ];
+  systemd.services.openclaw-gateway.requires = [ "chromium-cdp.service" ];
 
   systemd.tmpfiles.rules = [
     "d /var/tmp/openclaw-compile-cache 0755 openclaw openclaw -"
+    "d /var/lib/openclaw/.chromium-data 0750 openclaw openclaw -"
     "L+ /usr/bin/google-chrome - - - - /run/current-system/sw/bin/chromium"
   ];
 
