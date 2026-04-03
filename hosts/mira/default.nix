@@ -27,10 +27,12 @@
     gateway.bind = "lan";
     tools.sessionsVisibility = "all";
     tools.agentToAgent = true;
-    gateway.httpToolsAllow = [ "sessions_send" ];
+    gateway.httpToolsAllow = [ "sessions_send" "sessions_spawn" ];
+    toolsAllow = [ "cron" ];
     userName = "Marc";
-    maxConcurrent = 2;
-    subagentsMaxConcurrent = 2;
+    maxConcurrent = 4;
+    subagentsMaxConcurrent = 8;
+    subagentModel = "openrouter/mistralai/mistral-small-2603";
     primaryModel = "anthropic/claude-sonnet-4-6";
     fallbackModels = [
       "anthropic/claude-haiku-4-5"
@@ -70,6 +72,8 @@
     };
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];
+    telegram.enable = true;
+    telegram.allowFrom = [ "5201076941" ];
   };
   # Startup performance optimizations (recommended by openclaw doctor)
   systemd.services.openclaw-gateway.environment = {
