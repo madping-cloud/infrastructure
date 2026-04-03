@@ -136,7 +136,10 @@ let
     // lib.optionalAttrs (channelsAttr != {}) { channels = channelsAttr; }
     // lib.optionalAttrs (cfg.customModelProviders != {}) { models = { mode = "merge"; providers = cfg.customModelProviders; }; }
     // lib.optionalAttrs (cfg.browser.cdpUrl != null) {
-      browser = { cdpUrl = cfg.browser.cdpUrl; } // lib.optionalAttrs cfg.browser.attachOnly { attachOnly = true; };
+      browser = {
+        cdpUrl = cfg.browser.cdpUrl;
+      } // lib.optionalAttrs cfg.browser.attachOnly { attachOnly = true; }
+        // lib.optionalAttrs (cfg.browser.profiles != {}) { profiles = cfg.browser.profiles; };
     };
   configJson = builtins.toJSON fullConfig;
 
@@ -181,6 +184,11 @@ in
       type = lib.types.bool;
       default = false;
       description = "When true, OpenClaw attaches to existing Chromium via cdpUrl instead of launching its own";
+    };
+    browser.profiles = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
+      default = {};
+      description = "Named browser profiles with CDP endpoints";
     };
 
     # ── Model options ──────────────────────────────────────────────────────────
