@@ -21,6 +21,7 @@
   sops.secrets.groq_api_key        = { sopsFile = "/etc/nixos/secrets/${host}/aurora.yaml"; key = "groq_api_key"; };
   sops.secrets.openrouter_api_key  = { sopsFile = "/etc/nixos/secrets/${host}/aurora.yaml"; key = "openrouter_api_key"; };
   sops.secrets.xai_api_key         = { sopsFile = "/etc/nixos/secrets/${host}/aurora.yaml"; key = "xai_api_key"; };
+  sops.secrets.tavily_api_key      = { sopsFile = "/etc/nixos/secrets/${host}/aurora.yaml"; key = "tavily_api_key"; };
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     gateway.allowedOrigins = [ "https://192.168.4.6" "https://192.168.4.6:18003" "https://10.100.0.1" "https://10.100.0.1:18003" ];
@@ -28,6 +29,8 @@
     tools.sessionsVisibility = "all";
     tools.agentToAgent = true;
     gateway.httpToolsAllow = [ "sessions_send" ];
+    webSearch.provider = "tavily";
+    webSearch.tavily.enable = true;
     userName = "Connie";
     maxConcurrent = 2;
     subagentsMaxConcurrent = 2;
