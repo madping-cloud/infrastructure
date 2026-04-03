@@ -21,6 +21,7 @@
   sops.secrets.groq_api_key        = { sopsFile = "/etc/nixos/secrets/${host}/mira.yaml"; key = "groq_api_key"; };
   sops.secrets.openrouter_api_key  = { sopsFile = "/etc/nixos/secrets/${host}/mira.yaml"; key = "openrouter_api_key"; };
   sops.secrets.xai_api_key         = { sopsFile = "/etc/nixos/secrets/${host}/mira.yaml"; key = "xai_api_key"; };
+  sops.secrets.tavily_api_key      = { sopsFile = "/etc/nixos/secrets/${host}/mira.yaml"; key = "tavily_api_key"; };
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
     gateway.allowedOrigins = [ "https://192.168.4.6" "https://192.168.4.6:18004" "https://10.100.0.1" "https://10.100.0.1:18004" ];
@@ -28,6 +29,8 @@
     tools.sessionsVisibility = "all";
     tools.agentToAgent = true;
     gateway.httpToolsAllow = [ "sessions_send" "sessions_spawn" ];
+    webSearch.provider = "tavily";
+    webSearch.tavily.enable = true;
     messages.debounceMs = 500;  # faster followup during pipeline work
     userName = "Marc";
     maxConcurrent = 5;
