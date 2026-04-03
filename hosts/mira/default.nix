@@ -102,10 +102,25 @@
       User = "openclaw";
       Group = "openclaw";
       ExecStart = pkgs.writeShellScript "workspace-backup" ''
+        export PATH="${pkgs.git}/bin:${pkgs.openssh}/bin:${pkgs.coreutils}/bin:$PATH"
+        export HOME="/var/lib/openclaw"
+        WORKSPACE="/var/lib/openclaw/workspace"
         BACKUP_DIR="/var/lib/openclaw/workspace-backups"
         TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+
+        # Git commit + push
+        cd "$WORKSPACE"
+        if [ -d .git ]; then
+          git add -A
+          if ! git diff --cached --quiet 2>/dev/null; then
+            git commit -m "auto: workspace snapshot $TIMESTAMP"
+            git push origin main 2>/dev/null || true
+          fi
+        fi
+
+        # Local snapshot
         SNAP="$BACKUP_DIR/$TIMESTAMP"
-        ${pkgs.coreutils}/bin/cp -a /var/lib/openclaw/workspace "$SNAP"
+        cp -a "$WORKSPACE" "$SNAP"
         # Keep only last 24 snapshots
         ls -1dt "$BACKUP_DIR"/20* 2>/dev/null | tail -n +25 | xargs rm -rf 2>/dev/null || true
       '';
