@@ -30,7 +30,7 @@ deploy_container() {
     mkdir -p "$MEMORY_BACKUP"
     incus exec "$CONTAINER" -- bash -c '
       cd /var/lib/openclaw
-      find . -path "*/memory/*.md" -o -name "MEMORY.md" | grep -v node_modules
+      find . -path "*/memory/*.md" -o -name "MEMORY.md" | grep -v node_modules || true
     ' 2>/dev/null | while read -r f; do
       mkdir -p "$MEMORY_BACKUP/$(dirname "$f")"
       incus file pull "$CONTAINER/var/lib/openclaw/$f" "$MEMORY_BACKUP/$f" 2>/dev/null || true
