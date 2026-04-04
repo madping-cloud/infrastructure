@@ -127,11 +127,11 @@
     };
   };
   systemd.timers.workspace-backup = {
-    description = "Backup Mira's workspace every 5 minutes";
+    description = "Backup Mira's workspace every minute";
     wantedBy = [ "timers.target" ];
     timerConfig = {
-      OnBootSec = "2min";
-      OnUnitActiveSec = "5min";
+      OnBootSec = "1min";
+      OnUnitActiveSec = "1min";
       Persistent = true;
     };
   };
