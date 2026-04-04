@@ -20,7 +20,6 @@
   sops.secrets.google_ai_api_key   = { sopsFile = "/etc/nixos/secrets/${host}/aurora.yaml"; key = "google_ai_api_key"; };
   sops.secrets.groq_api_key        = { sopsFile = "/etc/nixos/secrets/${host}/aurora.yaml"; key = "groq_api_key"; };
   sops.secrets.openrouter_api_key  = { sopsFile = "/etc/nixos/secrets/${host}/aurora.yaml"; key = "openrouter_api_key"; };
-  sops.secrets.xai_api_key         = { sopsFile = "/etc/nixos/secrets/${host}/aurora.yaml"; key = "xai_api_key"; };
   sops.secrets.tavily_api_key      = { sopsFile = "/etc/nixos/secrets/${host}/aurora.yaml"; key = "tavily_api_key"; };
   services.openclaw = {
     enable = true; openFirewall = true; secretsFile = "/run/openclaw-env";
@@ -42,7 +41,7 @@
       "google/gemini-2.5-flash"
       "google/gemini-2.5-flash-lite"
       "google/imagen-4"
-      "x-ai/grok-4.20-0309-non-reasoning"
+      "openrouter/x-ai/grok-4.20-0309-non-reasoning"
     ];
     # Models with aliases — cheap options via OpenRouter (China allowed for Aurora)
     modelAliases = {
@@ -52,17 +51,8 @@
       "openrouter/deepseek/deepseek-v3.2"                = "deepseek-v3";       # $0.26/1M — 163k ctx, tools + reasoning. Best quality/value for complex questions.
       "openrouter/qwen/qwen3-235b-a22b-thinking-2507"    = "qwen-think";        # $0.15/$1.50 — Deep reasoning. Use sparingly (output is pricey).
       "openrouter/mistralai/mistral-small-2603"          = "mistral-small";     # $0.15/1M — creative writing, narrative, storytelling (French sensibility)
-      "x-ai/grok-4.20-0309-non-reasoning"               = "grok";              # 2M ctx, permissive
+      "openrouter/x-ai/grok-4.20-0309-non-reasoning"     = "grok";              # 2M ctx, permissive via OpenRouter
     };
-    # xAI custom provider — Grok 4.2
-    customModelProviders.xai = {
-      baseUrl = "https://api.x.ai/v1";
-      api = "openai-responses";
-      models = [
-        { id = "grok-4.20-0309-non-reasoning"; name = "Grok 4.20"; reasoning = false; input = [ "text" "image" ]; cost = { input = 2; output = 6; cacheRead = 0.2; cacheWrite = 0; }; contextWindow = 2000000; maxTokens = 30000; }
-      ];
-    };
-    toolsAllow = [ "cron" ];  # Allow Aurora to manage her own cron jobs
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];
     telegram.enable = true;
