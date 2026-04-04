@@ -49,6 +49,10 @@
       "google/gemini-2.5-pro"
       "google/gemini-2.5-flash"
       "openrouter/x-ai/grok-4.20-0309-non-reasoning"
+      "openrouter/x-ai/grok-4.20-multi-agent-0309"
+      "openrouter/x-ai/grok-4.1-fast"
+      "openrouter/x-ai/grok-4-fast"
+      "openrouter/x-ai/grok-4"
       "openrouter/mistralai/mistral-large-2411"
       "openrouter/mistralai/mistral-small-2603"
       "openrouter/meta-llama/llama-4-maverick"
@@ -61,6 +65,10 @@
       "google/gemini-2.5-pro"                  = "gemini-pro";
       "google/gemini-2.5-flash"                = "gemini-flash";
       "openrouter/x-ai/grok-4.20-0309-non-reasoning" = "grok";
+      "openrouter/x-ai/grok-4.20-multi-agent-0309" = "grok-multi";
+      "openrouter/x-ai/grok-4.1-fast"             = "grok-fast";
+      "openrouter/x-ai/grok-4-fast"               = "grok-4-fast";
+      "openrouter/x-ai/grok-4"                    = "grok-4";
       "openrouter/mistralai/mistral-large-2411"  = "mistral-large";
       "openrouter/mistralai/mistral-small-2603" = "mistral-small";
       "openrouter/meta-llama/llama-4-maverick" = "llama-maverick";
