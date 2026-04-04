@@ -41,7 +41,7 @@
       "google/gemini-2.5-flash"
       "google/gemini-2.5-flash-lite"
       "google/imagen-4"
-      "openrouter/x-ai/grok-4.20-0309-non-reasoning"
+      "openrouter/x-ai/grok-4.20"
     ];
     # Models with aliases — cheap options via OpenRouter (China allowed for Aurora)
     modelAliases = {
@@ -51,7 +51,7 @@
       "openrouter/deepseek/deepseek-v3.2"                = "deepseek-v3";       # $0.26/1M — 163k ctx, tools + reasoning. Best quality/value for complex questions.
       "openrouter/qwen/qwen3-235b-a22b-thinking-2507"    = "qwen-think";        # $0.15/$1.50 — Deep reasoning. Use sparingly (output is pricey).
       "openrouter/mistralai/mistral-small-2603"          = "mistral-small";     # $0.15/1M — creative writing, narrative, storytelling (French sensibility)
-      "openrouter/x-ai/grok-4.20-0309-non-reasoning"     = "grok";              # 2M ctx, permissive via OpenRouter
+      "openrouter/x-ai/grok-4.20"     = "grok";              # 2M ctx, permissive via OpenRouter
     };
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];

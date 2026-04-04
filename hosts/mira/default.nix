@@ -48,8 +48,8 @@
       "anthropic/claude-haiku-4-5"
       "google/gemini-2.5-pro"
       "google/gemini-2.5-flash"
-      "openrouter/x-ai/grok-4.20-0309-non-reasoning"
-      "openrouter/x-ai/grok-4.20-multi-agent-0309"
+      "openrouter/x-ai/grok-4.20"
+      "openrouter/x-ai/grok-4.20-multi-agent"
       "openrouter/x-ai/grok-4.1-fast"
       "openrouter/x-ai/grok-4-fast"
       "openrouter/x-ai/grok-4"
@@ -64,8 +64,8 @@
       "anthropic/claude-haiku-4-5"             = "haiku";
       "google/gemini-2.5-pro"                  = "gemini-pro";
       "google/gemini-2.5-flash"                = "gemini-flash";
-      "openrouter/x-ai/grok-4.20-0309-non-reasoning" = "grok";
-      "openrouter/x-ai/grok-4.20-multi-agent-0309" = "grok-multi";
+      "openrouter/x-ai/grok-4.20"                   = "grok";
+      "openrouter/x-ai/grok-4.20-multi-agent"     = "grok-multi";
       "openrouter/x-ai/grok-4.1-fast"             = "grok-fast";
       "openrouter/x-ai/grok-4-fast"               = "grok-4-fast";
       "openrouter/x-ai/grok-4"                    = "grok-4";
