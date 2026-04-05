@@ -35,19 +35,20 @@
     userName = "Marc";
     maxConcurrent = 5;
     subagentsMaxConcurrent = 10;
-    subagentModel = "anthropic/claude-haiku-4-5";
-    primaryModel = "anthropic/claude-sonnet-4-6";
+    subagentModel = "openrouter/anthropic/claude-haiku-4-5";
+    primaryModel = "openrouter/anthropic/claude-sonnet-4-6";
     fallbackModels = [
       "openrouter/mistralai/mistral-large-2411"
-      "anthropic/claude-haiku-4-5"
+      "openrouter/anthropic/claude-haiku-4-5"
       "openrouter/meta-llama/llama-4-maverick"
     ];
     availableModels = [
-      "anthropic/claude-sonnet-4-6"
-      "anthropic/claude-opus-4-6"
-      "anthropic/claude-haiku-4-5"
+      "openrouter/anthropic/claude-sonnet-4-6"
+      "openrouter/anthropic/claude-opus-4-6"
+      "openrouter/anthropic/claude-haiku-4-5"
       "google/gemini-2.5-pro"
       "google/gemini-2.5-flash"
+      "google/imagen-4"
       "openrouter/x-ai/grok-4.20"
       "openrouter/x-ai/grok-4.20-multi-agent"
       "openrouter/x-ai/grok-4.1-fast"
@@ -57,13 +58,19 @@
       "openrouter/mistralai/mistral-small-2603"
       "openrouter/meta-llama/llama-4-maverick"
       "openrouter/meta-llama/llama-4-scout"
+      # Image generation models
+      "x-ai/grok-imagine-image"
+      "openrouter/google/gemini-2.5-flash-image"
+      "openrouter/google/gemini-3-pro-image-preview"
+      "openrouter/google/gemini-3.1-flash-image-preview"
     ];
     modelAliases = {
-      "anthropic/claude-sonnet-4-6"            = "sonnet";
-      "anthropic/claude-opus-4-6"              = "opus";
-      "anthropic/claude-haiku-4-5"             = "haiku";
+      "openrouter/anthropic/claude-sonnet-4-6"  = "sonnet";
+      "openrouter/anthropic/claude-opus-4-6"   = "opus";
+      "openrouter/anthropic/claude-haiku-4-5"  = "haiku";
       "google/gemini-2.5-pro"                  = "gemini-pro";
       "google/gemini-2.5-flash"                = "gemini-flash";
+      "google/imagen-4"                        = "imagen";
       "openrouter/x-ai/grok-4.20"                   = "grok";
       "openrouter/x-ai/grok-4.20-multi-agent"     = "grok-multi";
       "openrouter/x-ai/grok-4.1-fast"             = "grok-fast";
@@ -73,6 +80,18 @@
       "openrouter/mistralai/mistral-small-2603" = "mistral-small";
       "openrouter/meta-llama/llama-4-maverick" = "llama-maverick";
       "openrouter/meta-llama/llama-4-scout"    = "llama-scout";
+      # Image generation
+      "x-ai/grok-imagine-image"                      = "grok-imagine";
+      "openrouter/google/gemini-2.5-flash-image"     = "nano-banana";
+      "openrouter/google/gemini-3-pro-image-preview"  = "nano-banana-pro";
+      "openrouter/google/gemini-3.1-flash-image-preview" = "nano-banana-2";
+    };
+    customModelProviders.xai = {
+      baseUrl = "https://api.x.ai/v1";
+      api = "openai-responses";
+      models = [
+        { id = "grok-imagine-image"; name = "Grok Imagine Image"; reasoning = false; input = [ "text" "image" ]; cost = { input = 0; output = 0; cacheRead = 0; cacheWrite = 0; }; contextWindow = 32000; maxTokens = 4096; }
+      ];
     };
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];
