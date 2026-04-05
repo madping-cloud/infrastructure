@@ -39,7 +39,8 @@
     primaryModel = "anthropic/claude-sonnet-4-6";
     fallbackModels = [
       "openrouter/anthropic/claude-sonnet-4-6"
-      "openrouter/anthropic/claude-haiku-4-5"
+      "google/gemini-2.5-pro"
+      "openrouter/mistralai/mistral-large-2411"
       "openrouter/meta-llama/llama-4-maverick"
     ];
     availableModels = [
