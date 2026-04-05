@@ -35,16 +35,18 @@
     userName = "Marc";
     maxConcurrent = 5;
     subagentsMaxConcurrent = 10;
-    subagentModel = "openrouter/anthropic/claude-haiku-4-5";
-    primaryModel = "openrouter/anthropic/claude-sonnet-4-6";
+    subagentModel = "anthropic/claude-haiku-4-5";
+    primaryModel = "anthropic/claude-sonnet-4-6";
     fallbackModels = [
-      "openrouter/mistralai/mistral-large-2411"
+      "openrouter/anthropic/claude-sonnet-4-6"
       "openrouter/anthropic/claude-haiku-4-5"
       "openrouter/meta-llama/llama-4-maverick"
     ];
     availableModels = [
+      "anthropic/claude-sonnet-4-6"
+      "anthropic/claude-opus-4-6"
+      "anthropic/claude-haiku-4-5"
       "openrouter/anthropic/claude-sonnet-4-6"
-      "openrouter/anthropic/claude-opus-4-6"
       "openrouter/anthropic/claude-haiku-4-5"
       "google/gemini-2.5-pro"
       "google/gemini-2.5-flash"
@@ -65,9 +67,11 @@
       "openrouter/google/gemini-3.1-flash-image-preview"
     ];
     modelAliases = {
-      "openrouter/anthropic/claude-sonnet-4-6"  = "sonnet";
-      "openrouter/anthropic/claude-opus-4-6"   = "opus";
-      "openrouter/anthropic/claude-haiku-4-5"  = "haiku";
+      "anthropic/claude-sonnet-4-6"             = "sonnet";
+      "anthropic/claude-opus-4-6"              = "opus";
+      "anthropic/claude-haiku-4-5"             = "haiku";
+      "openrouter/anthropic/claude-sonnet-4-6" = "or-sonnet";
+      "openrouter/anthropic/claude-haiku-4-5"  = "or-haiku";
       "google/gemini-2.5-pro"                  = "gemini-pro";
       "google/gemini-2.5-flash"                = "gemini-flash";
       "google/imagen-4"                        = "imagen";
