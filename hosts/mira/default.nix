@@ -35,13 +35,10 @@
     userName = "Marc";
     maxConcurrent = 5;
     subagentsMaxConcurrent = 10;
-    subagentModel = "anthropic/claude-haiku-4-5";
-    primaryModel = "anthropic/claude-sonnet-4-6";
+    subagentModel = "openrouter/anthropic/claude-haiku-4-5";
+    primaryModel = "openrouter/anthropic/claude-sonnet-4-6";
     fallbackModels = [
-      "openrouter/anthropic/claude-sonnet-4-6"
-      "google/gemini-2.5-pro"
-      "openrouter/mistralai/mistral-large-2411"
-      "openrouter/meta-llama/llama-4-maverick"
+      "openrouter/x-ai/grok-4.20"
     ];
     availableModels = [
       "anthropic/claude-sonnet-4-6"
