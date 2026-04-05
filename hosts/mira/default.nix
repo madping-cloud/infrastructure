@@ -35,7 +35,7 @@
     userName = "Marc";
     maxConcurrent = 5;
     subagentsMaxConcurrent = 10;
-    subagentModel = "openrouter/anthropic/claude-haiku-4-5";
+    subagentModel = "openrouter/x-ai/grok-4.20";
     primaryModel = "openrouter/anthropic/claude-sonnet-4-6";
     fallbackModels = [
       "openrouter/x-ai/grok-4.20"
