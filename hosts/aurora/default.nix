@@ -34,24 +34,25 @@
     maxConcurrent = 2;
     subagentsMaxConcurrent = 2;
     primaryModel = "google/gemini-2.5-flash";
-    fallbackModels = [ "openrouter/deepseek/deepseek-v3.2" "google/gemini-2.5-flash-lite" ];
-    # NOTE: DeepSeek/Qwen allowed for Aurora only — she's Connie's companion, non-business
+    fallbackModels = [ "openrouter/google/gemini-2.5-flash" "google/gemini-2.5-flash-lite" ];
     availableModels = [
-      # Google (direct — default voice, warm and conversational)
+      # Google direct
       "google/gemini-2.5-flash"
       "google/gemini-2.5-flash-lite"
+      # Google via OpenRouter (fallback)
+      "openrouter/google/gemini-2.5-flash"
+      # Image generation
       "google/imagen-4"
-      "openrouter/x-ai/grok-4.20"
+      "openrouter/google/gemini-2.5-flash-image"
+      "openrouter/google/gemini-3.1-flash-image-preview"
     ];
-    # Models with aliases — cheap options via OpenRouter (China allowed for Aurora)
     modelAliases = {
-      "google/gemini-2.5-flash"                          = "gemini-flash";      # Default — warm, multimodal, conversational
-      "google/gemini-2.5-flash-lite"                     = "gemini-flash-lite"; # $0.10/1M — 1M ctx, lighter/cheaper Google
-      "openrouter/qwen/qwen3.5-flash-02-23"              = "qwen-flash";        # $0.065/1M — 1M ctx, multimodal, tools, reasoning. Cheapest capable worker.
-      "openrouter/deepseek/deepseek-v3.2"                = "deepseek-v3";       # $0.26/1M — 163k ctx, tools + reasoning. Best quality/value for complex questions.
-      "openrouter/qwen/qwen3-235b-a22b-thinking-2507"    = "qwen-think";        # $0.15/$1.50 — Deep reasoning. Use sparingly (output is pricey).
-      "openrouter/mistralai/mistral-small-2603"          = "mistral-small";     # $0.15/1M — creative writing, narrative, storytelling (French sensibility)
-      "openrouter/x-ai/grok-4.20"     = "grok";              # 2M ctx, permissive via OpenRouter
+      "google/gemini-2.5-flash"                          = "gemini-flash";       # Default — warm, multimodal, conversational
+      "google/gemini-2.5-flash-lite"                     = "gemini-flash-lite";  # Lighter/cheaper Google
+      "openrouter/google/gemini-2.5-flash"               = "gemini-flash-or";    # Same model via OpenRouter
+      "google/imagen-4"                                  = "imagen";             # Dedicated image generation — highest quality
+      "openrouter/google/gemini-2.5-flash-image"         = "flash-image";        # Conversational + inline image output
+      "openrouter/google/gemini-3.1-flash-image-preview" = "flash-image-new";    # Newer gen conversational image output
     };
     discord.enable = true;
     discord.allowFrom = [ "166609345080066048" ];
